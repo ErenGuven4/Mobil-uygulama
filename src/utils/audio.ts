@@ -1,84 +1,100 @@
 // ============================================
-// utils/audio.ts — Ses Yardımcı Fonksiyonları
+// utils/audio.ts — Ses Sistemi
 // ============================================
-// Expo Audio kütüphanesi ile ses çalma
-// placeholder fonksiyonları.
-// İleride gerçek ses dosyaları eklenebilir.
-// ============================================
-
+import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 
-/**
- * Ses sistemini başlat
- * Uygulamanın sesli modda çalışmasını sağlar
- */
+// Doğru cevap için kullanılacak yerel ses (Kullanıcı tarafından eklenecek)
+let successSound: Audio.Sound | null = null;
+export let isSoundEffectsEnabled = true;
+
+export function setSoundEffectsEnabled(enabled: boolean) {
+  isSoundEffectsEnabled = enabled;
+}
+
+// ============================================
+// Ses Sistemini Başlat
+// ============================================
 export async function initAudio(): Promise<void> {
-  try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
-    });
-    console.log('🔊 Ses sistemi başlatıldı');
-  } catch (error) {
-    console.log('⚠️ Ses sistemi başlatılamadı:', error);
-  }
+  console.log('🔊 Ses sistemi başlatıldı');
 }
 
-/**
- * Doğru cevap sesi çal
- * TODO: Gerçek ses dosyası eklenince güncellenecek
- */
+// ============================================
+// Doğru Cevap Sesi (Süper yerine Konfeti Sesi)
+// ============================================
 export async function playCorrectSound(): Promise<void> {
+  if (!isSoundEffectsEnabled) return;
   try {
-    // Placeholder — gerçek ses dosyası eklendiğinde:
-    // const { sound } = await Audio.Sound.createAsync(
-    //   require('../../assets/sounds/correct.mp3')
-    // );
-    // await sound.playAsync();
-    console.log('🎵 Doğru cevap sesi çalındı!');
+    // Daha önce yüklendiyse önceki sesi durdur/başa sar
+    if (successSound) {
+      await successSound.unloadAsync();
+    }
+    
+    // assets içindeki success.mp3 dosyasını çal
+    const { sound } = await Audio.Sound.createAsync(
+      require('../../assets/success.mp3')
+    );
+    successSound = sound;
+    await sound.playAsync();
   } catch (error) {
-    console.log('⚠️ Ses çalınamadı:', error);
+    console.log('⚠️ Doğru sesi (success.mp3) bulunamadı veya çalınamadı:', error);
   }
 }
 
-/**
- * Yanlış cevap sesi çal
- * TODO: Gerçek ses dosyası eklenince güncellenecek
- */
+// ============================================
+// Yanlış Cevap Sesi (Daha doğal bir ses tonu)
+// ============================================
 export async function playWrongSound(): Promise<void> {
-  try {
-    // Placeholder — gerçek ses dosyası eklendiğinde:
-    // const { sound } = await Audio.Sound.createAsync(
-    //   require('../../assets/sounds/wrong.mp3')
-    // );
-    // await sound.playAsync();
-    console.log('🎵 Yanlış cevap sesi çalındı!');
-  } catch (error) {
-    console.log('⚠️ Ses çalınamadı:', error);
-  }
+  // Kullanıcı isteği üzerine hata yapıldığında okunan "Bir daha dene" sesi kaldırıldı.
+  return;
 }
 
-/**
- * Seviye tamamlama sesi çal
- * TODO: Gerçek ses dosyası eklenince güncellenecek
- */
-export async function playLevelCompleteSound(): Promise<void> {
-  try {
-    console.log('🎵 Seviye tamamlama sesi çalındı!');
-  } catch (error) {
-    console.log('⚠️ Ses çalınamadı:', error);
-  }
-}
-
-/**
- * Buton tıklama sesi çal
- * TODO: Gerçek ses dosyası eklenince güncellenecek
- */
+// ============================================
+// Buton Tıklama Sesi
+// ============================================
 export async function playTapSound(): Promise<void> {
+  // Sessiz
+}
+
+// ============================================
+// Seviye Tamamlama Sesi
+// ============================================
+export async function playLevelCompleteSound(): Promise<void> {
+  playCorrectSound(); // Seviye bitince de aynı konfeti sesi çalsın
+}
+
+// ============================================
+// Kelimeyi Türkçe Sesli Oku (Sadece butona basınca)
+// ============================================
+export async function speakWord(word: string): Promise<void> {
   try {
-    console.log('🎵 Tıklama sesi çalındı!');
+    const isSpeaking = await Speech.isSpeakingAsync();
+    if (isSpeaking) {
+      await Speech.stop();
+    }
+    Speech.speak(word, {
+      language: 'tr-TR',
+      pitch: 1.0, // Sesi dijitalleştirmeden (bozmadan) çıkan en doğal ton
+      rate: 0.9,  // Çok yavaşlatıldığında oluşan robotik uzamayı engellemek için doğal hız
+    });
   } catch (error) {
-    console.log('⚠️ Ses çalınamadı:', error);
+    console.log('⚠️ TTS çalıştırılamadı:', error);
   }
+}
+
+// ============================================
+// Heceyi Sesli Oku (SES KAPALI)
+// ============================================
+export async function speakSyllable(syllable: string): Promise<void> {
+  // Kullanıcı isteği üzerine heceye tıklama sesi kapatıldı.
+  return;
+}
+
+// ============================================
+// TTS'i Durdur
+// ============================================
+export async function stopSpeaking(): Promise<void> {
+  try {
+    await Speech.stop();
+  } catch (_) {}
 }

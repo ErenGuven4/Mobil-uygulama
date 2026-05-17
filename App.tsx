@@ -13,15 +13,17 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import SplashScreen from './src/screens/SplashScreen';
-import LevelSelectScreen from './src/screens/LevelSelectScreen';
+import NameEntryScreen from './src/screens/NameEntryScreen';
 import GameScreen from './src/screens/GameScreen';
+import MainTabs from './src/navigation/MainTabs';
 import { initAudio } from './src/utils/audio';
 
 // Navigasyon tip tanımları
 type RootStackParamList = {
   Splash: undefined;
-  LevelSelect: undefined;
-  Game: { levelId: number };
+  NameEntry: undefined;
+  MainTabs: { userId: string };
+  Game: { levelId: number; userId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -51,12 +53,21 @@ export default function App() {
           }}
         />
 
-        {/* Seviye Seçim Ekranı */}
+        {/* İsim Girişi Ekranı */}
         <Stack.Screen
-          name="LevelSelect"
-          component={LevelSelectScreen}
+          name="NameEntry"
+          component={NameEntryScreen}
           options={{
-            animation: 'slide_from_bottom', // Alttan yukarı açılsın
+            animation: 'slide_from_right',
+          }}
+        />
+
+        {/* Ana Tab Navigatörü */}
+        <Stack.Screen
+          name="MainTabs"
+          component={MainTabs}
+          options={{
+            animation: 'slide_from_bottom',
           }}
         />
 
@@ -66,7 +77,7 @@ export default function App() {
           component={GameScreen}
           options={{
             animation: 'slide_from_right',
-            gestureEnabled: false, // Oyun sırasında geri kaydırmayı engelle
+            gestureEnabled: false,
           }}
         />
       </Stack.Navigator>

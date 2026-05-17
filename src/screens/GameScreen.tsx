@@ -13,7 +13,7 @@ import ProgressBar from '../components/ProgressBar';
 import FeedbackModal from '../components/FeedbackModal';
 import ConfettiEffect from '../components/ConfettiEffect';
 import { shuffle } from '../utils/shuffle';
-import { playCorrectSound, playWrongSound, playTapSound } from '../utils/audio';
+import { playCorrectSound, playWrongSound, playTapSound, playLevelCompleteSound, speakWord, speakSyllable, stopSpeaking } from '../utils/audio';
 import { getWordsByLevel, updateProgress, Word } from '../api/api';
 
 interface Props {
@@ -31,7 +31,7 @@ const fallbackWords: Word[] = [
 ];
 
 export default function GameScreen({ navigation, route }: Props) {
-  const { levelId } = route.params;
+  const { levelId, userId = 'default' } = route.params;
 
   // Durum (state) değişkenleri
   const [words, setWords] = useState<Word[]>([]);
@@ -98,6 +98,7 @@ export default function GameScreen({ navigation, route }: Props) {
   // Hece butonuna tıklandığında
   function handleSyllablePress(syllable: string, index: number) {
     playTapSound();
+    speakSyllable(syllable); // Heceyi sesli oku
 
     // İlk boş yuvayı bul
     const emptySlotIndex = selectedSyllables.findIndex((s) => s === undefined);
@@ -160,7 +161,7 @@ export default function GameScreen({ navigation, route }: Props) {
       playCorrectSound();
 
       // İlerlemeyi kaydet
-      await updateProgress(currentWord.id, true);
+      await updateProgress(currentWord.id, true, undefined, userId);
     } else {
       // YANLIŞ CEVAP
       setSlotStatus('wrong');
@@ -196,8 +197,14 @@ export default function GameScreen({ navigation, route }: Props) {
   // Seviye tamamlandığında
   async function handleLevelComplete() {
     setLevelComplete(true);
-    await updateProgress('', false, levelId);
+    playLevelCompleteSound();
+    await updateProgress('', false, levelId, userId);
   }
+
+  // Bileşen kapandığında TTS'i durdur
+  useEffect(() => {
+    return () => { stopSpeaking(); };
+  }, []);
 
   // Yükleniyor
   if (loading) {
@@ -264,6 +271,15 @@ export default function GameScreen({ navigation, route }: Props) {
         ]}>
           {currentWord.emoji}
         </Animated.Text>
+
+        {/* Tekrar dinle butonu */}
+        <TouchableOpacity
+          style={styles.speakButton}
+          onPress={() => speakWord(currentWord.word)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.speakButtonText}>🔊 Dinle</Text>
+        </TouchableOpacity>
 
         {/* İpucu */}
         <Text style={styles.hintText}>Bu kelimeyi hecele:</Text>
@@ -361,7 +377,21 @@ const styles = StyleSheet.create({
   },
   wordEmoji: {
     fontSize: 80,
+    marginBottom: SPACING.sm,
+  },
+  speakButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight,
+    paddingVertical: 6,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.round,
     marginBottom: SPACING.md,
+  },
+  speakButtonText: {
+    fontSize: FONTS.caption,
+    color: COLORS.primary,
+    fontWeight: FONTS.bold,
   },
   hintText: {
     fontSize: FONTS.body,

@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
-  StatusBar,
+  StatusBar, Image,
 } from 'react-native';
 import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 
@@ -91,7 +91,12 @@ export default function SplashScreen({ navigation }: Props) {
         styles.logoContainer,
         { transform: [{ scale: logoScale }] },
       ]}>
-        <Text style={styles.logoEmoji}>🐝</Text>
+        {/* Kendi logon için: frontend/assets/logo.png dosyasını koymalısın */}
+        <Image 
+          source={require('../../assets/logo.png')} 
+          style={styles.logoImage} 
+          resizeMode="contain"
+        />
         <View style={styles.logoCircle} />
       </Animated.View>
 
@@ -112,7 +117,7 @@ export default function SplashScreen({ navigation }: Props) {
         <TouchableOpacity
           style={styles.startButton}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('LevelSelect')}
+          onPress={() => navigation.replace('NameEntry')}
         >
           <Text style={styles.startButtonText}>🚀 Başla!</Text>
         </TouchableOpacity>
@@ -154,8 +159,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.warning,
     opacity: 0.15,
   },
-  logoEmoji: {
-    fontSize: 80,
+  logoImage: {
+    width: 100,
+    height: 100,
     zIndex: 1,
   },
   title: {

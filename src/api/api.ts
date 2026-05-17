@@ -16,7 +16,13 @@
 //   Windows: ipconfig
 //   Mac/Linux: ifconfig
 // ============================================
-const BASE_URL = 'http://localhost:3001/api';
+import Constants from 'expo-constants';
+
+// Telefonun backend'e bağlanabilmesi için Expo'nun sağladığı IP adresini otomatik çekiyoruz
+const hostUri = Constants.expoConfig?.hostUri;
+const localIp = hostUri ? hostUri.split(':')[0] : '192.168.1.19';
+
+const BASE_URL = `http://${localIp}:3001/api`;
 
 // ============================================
 // Tip Tanımlamaları (TypeScript)
@@ -126,11 +132,12 @@ export async function getProgress(userId: string = 'default'): Promise<UserProgr
 export async function updateProgress(
   wordId: string,
   correct: boolean,
-  levelId?: number
+  levelId?: number,
+  userId: string = 'default'
 ): Promise<UserProgress | null> {
   try {
     const body: any = {
-      userId: 'default',
+      userId,
       wordId,
       correct,
     };
@@ -177,5 +184,22 @@ export async function resetProgress(): Promise<boolean> {
   } catch (error) {
     console.error('API Hatası (resetProgress):', error);
     return false;
+  }
+}
+
+/**
+ * Tüm kelimeleri getir
+ */
+export async function getAllWords(): Promise<Word[]> {
+  try {
+    const response = await fetch(`${BASE_URL}/words`);
+    const data = await response.json();
+    if (data.success) {
+      return data.words;
+    }
+    return [];
+  } catch (error) {
+    console.error('API Hatası (getAllWords):', error);
+    return [];
   }
 }

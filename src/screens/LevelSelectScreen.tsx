@@ -12,9 +12,11 @@ import { getLevels, getProgress, Level, UserProgress } from '../api/api';
 
 interface Props {
   navigation: any;
+  route: any;
 }
 
-export default function LevelSelectScreen({ navigation }: Props) {
+export default function LevelSelectScreen({ navigation, route }: Props) {
+  const { userId } = route.params || { userId: 'default' };
   const [levels, setLevels] = useState<Level[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,18 +51,18 @@ export default function LevelSelectScreen({ navigation }: Props) {
       setLoading(true);
       const [levelsData, progressData] = await Promise.all([
         getLevels(),
-        getProgress(),
+        getProgress(userId),
       ]);
       setLevels(levelsData.length > 0 ? levelsData : defaultLevels);
       setProgress(progressData || {
-        userId: 'default', completedLevels: [], currentLevel: 1,
+        userId: userId, completedLevels: [], currentLevel: 1,
         score: 0, completedWords: [], createdAt: '',
       });
     } catch (error) {
       console.error('Veri yüklenemedi:', error);
       setLevels(defaultLevels);
       setProgress({
-        userId: 'default', completedLevels: [], currentLevel: 1,
+        userId: userId, completedLevels: [], currentLevel: 1,
         score: 0, completedWords: [], createdAt: '',
       });
     } finally {
@@ -80,7 +82,7 @@ export default function LevelSelectScreen({ navigation }: Props) {
   function handleLevelPress(levelId: number) {
     const status = getLevelStatus(levelId);
     if (status !== 'locked') {
-      navigation.navigate('Game', { levelId });
+      navigation.navigate('Game', { levelId, userId });
     }
   }
 
