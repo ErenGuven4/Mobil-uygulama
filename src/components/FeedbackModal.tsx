@@ -5,7 +5,8 @@ import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity, Modal,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -17,6 +18,8 @@ interface FeedbackModalProps {
 export default function FeedbackModal({
   visible, type, message, onClose,
 }: FeedbackModalProps) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -29,7 +32,6 @@ export default function FeedbackModal({
         bounciness: 12,
       }).start();
 
-      // Doğru cevapta 1.5 saniye sonra otomatik kapat
       if (type === 'correct') {
         const timer = setTimeout(onClose, 1500);
         return () => clearTimeout(timer);
@@ -45,7 +47,7 @@ export default function FeedbackModal({
         <Animated.View style={[
           styles.card,
           {
-            backgroundColor: isCorrect ? COLORS.successLight : COLORS.errorLight,
+            backgroundColor: isCorrect ? theme.successLight : theme.errorLight,
             transform: [{ scale: scaleAnim }],
           },
         ]}>
@@ -54,7 +56,7 @@ export default function FeedbackModal({
           </Text>
           <Text style={[
             styles.title,
-            { color: isCorrect ? COLORS.success : COLORS.error },
+            { color: isCorrect ? theme.success : theme.error },
           ]}>
             {isCorrect ? 'Aferin!' : 'Tekrar Dene!'}
           </Text>
@@ -72,10 +74,10 @@ export default function FeedbackModal({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: theme.overlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -88,12 +90,12 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 64, marginBottom: SPACING.md },
   title: { fontSize: FONTS.title, fontWeight: FONTS.bold, marginBottom: SPACING.sm },
-  message: { fontSize: FONTS.body, color: COLORS.text, textAlign: 'center', marginBottom: SPACING.lg },
+  message: { fontSize: FONTS.body, color: theme.text, textAlign: 'center', marginBottom: SPACING.lg },
   button: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
     borderRadius: RADIUS.round,
   },
-  buttonText: { color: COLORS.textWhite, fontSize: FONTS.body, fontWeight: FONTS.bold },
+  buttonText: { color: theme.textWhite, fontSize: FONTS.body, fontWeight: FONTS.bold },
 });

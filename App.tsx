@@ -1,12 +1,4 @@
-// ============================================
-// App.tsx — Ana Uygulama Dosyası
-// ============================================
-// React Navigation ile ekranlar arası
-// geçişi yönetir.
-//
-// Ekran Akışı:
-//   Splash → LevelSelect → Game
-// ============================================
+// Uygulamanın ana giriş noktası, ekranlar arası geçişleri (navigasyonu) burada tanımladım.
 
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
@@ -18,7 +10,9 @@ import GameScreen from './src/screens/GameScreen';
 import MainTabs from './src/navigation/MainTabs';
 import { initAudio } from './src/utils/audio';
 
-// Navigasyon tip tanımları
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+
+// Sayfaların hangi parametreleri alacağını tanımladım.
 type RootStackParamList = {
   Splash: undefined;
   NameEntry: undefined;
@@ -30,30 +24,40 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   useEffect(() => {
-    // Uygulama başladığında ses sistemini başlat
+    // Uygulama ilk açıldığında sesleri hazırladım.
     initAudio();
   }, []);
+
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
+  );
+}
+
+function AppNavigator() {
+  const { theme } = useTheme();
 
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
-          headerShown: false, // Tüm ekranlarda varsayılan header'ı gizle
-          animation: 'slide_from_right', // Sağdan sola geçiş animasyonu
-          contentStyle: { backgroundColor: '#FFF5F7' },
+          headerShown: false, // Sayfaların kendi başlıklarını gizledim, kendi tasarımımızı kullanacağım.
+          animation: 'slide_from_right', // Sayfa geçişlerini sağdan sola kayacak şekilde ayarladım.
+          contentStyle: { backgroundColor: theme.background },
         }}
       >
-        {/* Karşılama Ekranı */}
+        {/* Açılışta görünen logo ekranını buraya ekledim */}
         <Stack.Screen
           name="Splash"
           component={SplashScreen}
           options={{
-            animation: 'fade', // Splash ekranı fade ile açılsın
+            animation: 'fade', // Bu ekran yavaşça belirerek açılsın diye fade verdim
           }}
         />
 
-        {/* İsim Girişi Ekranı */}
+        {/* Kullanıcının adını yazdığı ilk giriş ekranını buraya koydum */}
         <Stack.Screen
           name="NameEntry"
           component={NameEntryScreen}
@@ -62,7 +66,7 @@ export default function App() {
           }}
         />
 
-        {/* Ana Tab Navigatörü */}
+        {/* Alt taraftaki menülü ana ekran yapısını buraya tanımladım */}
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
@@ -71,7 +75,7 @@ export default function App() {
           }}
         />
 
-        {/* Oyun Ekranı */}
+        {/* Kelimeleri hecelediğimiz ana oyun alanını buraya ekledim */}
         <Stack.Screen
           name="Game"
           component={GameScreen}
@@ -84,3 +88,4 @@ export default function App() {
     </NavigationContainer>
   );
 }
+

@@ -1,10 +1,6 @@
 // ============================================
 // components/AnswerSlot.tsx — Cevap Yuvası
 // ============================================
-// Çocuğun seçtiği hecelerin sırayla
-// yerleştirildiği kutucuklar.
-// ============================================
-
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
@@ -13,16 +9,13 @@ import {
   Animated,
   View,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface AnswerSlotProps {
-  /** Yuvadaki hece (boşsa undefined) */
   syllable?: string;
-  /** Yuva indeksi */
   index: number;
-  /** Tıklandığında heceyi geri gönder */
   onPress: () => void;
-  /** Doğru mu yanlış mı gösterimi */
   status?: 'neutral' | 'correct' | 'wrong';
 }
 
@@ -32,14 +25,14 @@ export default function AnswerSlot({
   onPress,
   status = 'neutral',
 }: AnswerSlotProps) {
-  // Yeni hece geldiğinde bounce animasyonu
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+
   const bounceAnim = useRef(new Animated.Value(0)).current;
-  // Yanlış cevapta titreme animasyonu
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (syllable) {
-      // Hece yerleştiğinde bounce efekti
       bounceAnim.setValue(0);
       Animated.spring(bounceAnim, {
         toValue: 1,
@@ -52,7 +45,6 @@ export default function AnswerSlot({
 
   useEffect(() => {
     if (status === 'wrong') {
-      // Yanlış cevapta titreme animasyonu
       Animated.sequence([
         Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
@@ -68,18 +60,17 @@ export default function AnswerSlot({
     outputRange: [0.5, 1],
   });
 
-  // Duruma göre renk seç
   const getStatusStyle = () => {
     switch (status) {
       case 'correct':
         return {
-          backgroundColor: COLORS.successLight,
-          borderColor: COLORS.success,
+          backgroundColor: theme.successLight,
+          borderColor: theme.success,
         };
       case 'wrong':
         return {
-          backgroundColor: COLORS.errorLight,
-          borderColor: COLORS.error,
+          backgroundColor: theme.errorLight,
+          borderColor: theme.error,
         };
       default:
         return {};
@@ -123,13 +114,13 @@ export default function AnswerSlot({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     margin: SPACING.xs,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.answerSlot,
+    backgroundColor: theme.answerSlot,
     borderWidth: 2,
-    borderColor: COLORS.answerSlotBorder,
+    borderColor: theme.answerSlotBorder,
     borderStyle: 'dashed',
     minWidth: 70,
     minHeight: 55,
@@ -143,13 +134,13 @@ const styles = StyleSheet.create({
   text: {
     fontSize: FONTS.heading,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
   },
   correctText: {
-    color: COLORS.success,
+    color: theme.success,
   },
   wrongText: {
-    color: COLORS.error,
+    color: theme.error,
   },
   placeholder: {
     alignItems: 'center',
@@ -157,7 +148,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: FONTS.caption,
-    color: COLORS.disabled,
+    color: theme.disabled,
     fontWeight: FONTS.medium,
   },
 });

@@ -1,27 +1,22 @@
-// ============================================
-// utils/audio.ts — Ses Sistemi
-// ============================================
+// Seslerin çalınmasını ve sesli okuma (TTS) işlemlerini kontrol etmek için yazdığım yardımcı fonksiyonlar.
 import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 
-// Doğru cevap için kullanılacak yerel ses (Kullanıcı tarafından eklenecek)
+// Doğru ve yanlış seslerini atadığım değişkenler.
 let successSound: Audio.Sound | null = null;
+let wrongSound: Audio.Sound | null = null;
 export let isSoundEffectsEnabled = true;
 
 export function setSoundEffectsEnabled(enabled: boolean) {
   isSoundEffectsEnabled = enabled;
 }
 
-// ============================================
-// Ses Sistemini Başlat
-// ============================================
+// Ses sistemini başlattım.
 export async function initAudio(): Promise<void> {
   console.log('🔊 Ses sistemi başlatıldı');
 }
 
-// ============================================
-// Doğru Cevap Sesi (Süper yerine Konfeti Sesi)
-// ============================================
+// Doğru cevap verildiğinde çalacak konfeti sesini buraya ekledim.
 export async function playCorrectSound(): Promise<void> {
   if (!isSoundEffectsEnabled) return;
   try {
@@ -30,7 +25,7 @@ export async function playCorrectSound(): Promise<void> {
       await successSound.unloadAsync();
     }
     
-    // assets içindeki success.mp3 dosyasını çal
+    // Projenin assets klasöründeki doğru cevap sesini çaldırdım.
     const { sound } = await Audio.Sound.createAsync(
       require('../../assets/success.mp3')
     );
@@ -41,31 +36,34 @@ export async function playCorrectSound(): Promise<void> {
   }
 }
 
-// ============================================
-// Yanlış Cevap Sesi (Daha doğal bir ses tonu)
-// ============================================
+// Yanlış cevap verildiğinde çalacak buzzer sesini buraya ekledim.
 export async function playWrongSound(): Promise<void> {
-  // Kullanıcı isteği üzerine hata yapıldığında okunan "Bir daha dene" sesi kaldırıldı.
-  return;
+  if (!isSoundEffectsEnabled) return;
+  try {
+    if (wrongSound) {
+      await wrongSound.unloadAsync();
+    }
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: 'https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3' }
+    );
+    wrongSound = sound;
+    await sound.playAsync();
+  } catch (error) {
+    console.log('⚠️ Yanlış cevap sesi çalınamadı:', error);
+  }
 }
 
-// ============================================
-// Buton Tıklama Sesi
-// ============================================
+// Buton tıklama sesini tanımladım.
 export async function playTapSound(): Promise<void> {
   // Sessiz
 }
 
-// ============================================
-// Seviye Tamamlama Sesi
-// ============================================
+// Bölüm bitirme sesini ayarladım.
 export async function playLevelCompleteSound(): Promise<void> {
   playCorrectSound(); // Seviye bitince de aynı konfeti sesi çalsın
 }
 
-// ============================================
-// Kelimeyi Türkçe Sesli Oku (Sadece butona basınca)
-// ============================================
+// Kelimenin tamamını Türkçe okutmak için kullandığım TTS fonksiyonu.
 export async function speakWord(word: string): Promise<void> {
   try {
     const isSpeaking = await Speech.isSpeakingAsync();
@@ -82,17 +80,13 @@ export async function speakWord(word: string): Promise<void> {
   }
 }
 
-// ============================================
-// Heceyi Sesli Oku (SES KAPALI)
-// ============================================
+// Heceye tıklayınca çalması planlanan ama sonradan iptal ettiğim ses.
 export async function speakSyllable(syllable: string): Promise<void> {
   // Kullanıcı isteği üzerine heceye tıklama sesi kapatıldı.
   return;
 }
 
-// ============================================
-// TTS'i Durdur
-// ============================================
+// Sesli okumayı yarıda kesmek için kullandığım durdurma fonksiyonu.
 export async function stopSpeaking(): Promise<void> {
   try {
     await Speech.stop();

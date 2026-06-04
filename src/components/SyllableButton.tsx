@@ -1,10 +1,6 @@
 // ============================================
 // components/SyllableButton.tsx — Hece Butonu
 // ============================================
-// Oyun ekranında karışık sırada gösterilen
-// her bir hece için tıklanabilir buton.
-// ============================================
-
 import React, { useRef } from 'react';
 import {
   TouchableOpacity,
@@ -12,16 +8,13 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface SyllableButtonProps {
-  /** Hece metni (ör: "El", "ma") */
   syllable: string;
-  /** Buton tıklandığında çağrılacak fonksiyon */
   onPress: () => void;
-  /** Buton devre dışı mı? (seçildiyse true) */
   disabled?: boolean;
-  /** Buton seçili mi? */
   selected?: boolean;
 }
 
@@ -31,12 +24,11 @@ export default function SyllableButton({
   disabled = false,
   selected = false,
 }: SyllableButtonProps) {
-  // Animasyon değeri — tıklama efekti için
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  /**
-   * Butona basıldığında küçülme efekti
-   */
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.9,
@@ -46,9 +38,6 @@ export default function SyllableButton({
     }).start();
   };
 
-  /**
-   * Butondan el çekildiğinde geri büyüme
-   */
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -89,13 +78,13 @@ export default function SyllableButton({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     margin: SPACING.sm,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.syllableBtn,
+    backgroundColor: theme.syllableBtn,
     borderWidth: 2,
-    borderColor: COLORS.syllableBtnBorder,
+    borderColor: theme.syllableBtnBorder,
     ...SHADOWS.medium,
   },
   button: {
@@ -108,21 +97,21 @@ const styles = StyleSheet.create({
   text: {
     fontSize: FONTS.heading,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
   },
   disabled: {
     opacity: 0.3,
-    backgroundColor: COLORS.disabled,
-    borderColor: COLORS.disabled,
+    backgroundColor: theme.disabled,
+    borderColor: theme.disabled,
   },
   disabledText: {
-    color: COLORS.textLight,
+    color: theme.textLight,
   },
   selected: {
-    backgroundColor: COLORS.syllableBtnActive,
-    borderColor: COLORS.primaryDark,
+    backgroundColor: theme.syllableBtnActive,
+    borderColor: theme.primaryDark,
   },
   selectedText: {
-    color: COLORS.textWhite,
+    color: theme.textWhite,
   },
 });

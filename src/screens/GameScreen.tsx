@@ -1,12 +1,10 @@
-// ============================================
-// screens/GameScreen.tsx — Oyun Ekranı
-// ============================================
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+// Kelimeleri heceleyip oyunu oynadığımız ana oyun ekranı.
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
   StatusBar, ActivityIndicator,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import SyllableButton from '../components/SyllableButton';
 import AnswerSlot from '../components/AnswerSlot';
 import ProgressBar from '../components/ProgressBar';
@@ -15,13 +13,14 @@ import ConfettiEffect from '../components/ConfettiEffect';
 import { shuffle } from '../utils/shuffle';
 import { playCorrectSound, playWrongSound, playTapSound, playLevelCompleteSound, speakWord, speakSyllable, stopSpeaking } from '../utils/audio';
 import { getWordsByLevel, updateProgress, Word } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
   route: any;
 }
 
-// Varsayılan kelimeler (offline fallback)
+// Sunucudan kelime gelmezse diye yedek kelime havuzu ekledim.
 const fallbackWords: Word[] = [
   { id: 'f1', word: 'Elma', syllables: ['El', 'ma'], level: 1, emoji: '🍎' },
   { id: 'f2', word: 'Arı', syllables: ['A', 'rı'], level: 1, emoji: '🐝' },
@@ -32,8 +31,9 @@ const fallbackWords: Word[] = [
 
 export default function GameScreen({ navigation, route }: Props) {
   const { levelId, userId = 'default' } = route.params;
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
 
-  // Durum (state) değişkenleri
   const [words, setWords] = useState<Word[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [shuffledSyllables, setShuffledSyllables] = useState<string[]>([]);
@@ -46,14 +46,11 @@ export default function GameScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [levelComplete, setLevelComplete] = useState(false);
 
-  // Animasyon değerleri
   const emojiScale = useRef(new Animated.Value(0)).current;
   const cardAnim = useRef(new Animated.Value(0)).current;
 
-  // Mevcut kelime
   const currentWord = words[currentWordIndex];
 
-  // Verileri yükle
   useEffect(() => {
     loadWords();
   }, [levelId]);
@@ -73,7 +70,7 @@ export default function GameScreen({ navigation, route }: Props) {
     setLoading(false);
   }
 
-  // Yeni kelime hazırla
+  // Yeni kelimeyi hazırlayan ve hecelerini karıştıran fonksiyonu yazdım.
   function setupWord(word: Word) {
     if (!word) return;
     const shuffled = shuffle(word.syllables);
@@ -82,7 +79,6 @@ export default function GameScreen({ navigation, route }: Props) {
     setUsedIndices(new Set());
     setSlotStatus('neutral');
 
-    // Emoji animasyonu
     emojiScale.setValue(0);
     cardAnim.setValue(0);
     Animated.parallel([
@@ -95,45 +91,39 @@ export default function GameScreen({ navigation, route }: Props) {
     ]).start();
   }
 
-  // Hece butonuna tıklandığında
+  // Bir heceye basıldığında onu boş kutuya yerleştiren fonksiyonu yazdım.
   function handleSyllablePress(syllable: string, index: number) {
     playTapSound();
-    speakSyllable(syllable); // Heceyi sesli oku
+    speakSyllable(syllable);
 
-    // İlk boş yuvayı bul
     const emptySlotIndex = selectedSyllables.findIndex((s) => s === undefined);
-    if (emptySlotIndex === -1) return; // Tüm yuvalar dolu
+    if (emptySlotIndex === -1) return;
 
-    // Heceyi yuvaya yerleştir
     const newSelected = [...selectedSyllables];
     newSelected[emptySlotIndex] = syllable;
     setSelectedSyllables(newSelected);
 
-    // Kullanılan indeksi işaretle
     const newUsed = new Set(usedIndices);
     newUsed.add(index);
     setUsedIndices(newUsed);
 
-    // Tüm yuvalar dolduysa kontrol et
     const allFilled = newSelected.every((s) => s !== undefined);
     if (allFilled) {
       checkAnswer(newSelected as string[]);
     }
   }
 
-  // Yuvadaki heceye tıklayınca geri al
+  // Seçilen bir heceyi geri almak için kutuya tıklandığında çalışan fonksiyonu yazdım.
   function handleSlotPress(slotIndex: number) {
     const syllable = selectedSyllables[slotIndex];
     if (!syllable) return;
 
     playTapSound();
 
-    // Yuvayı temizle
     const newSelected = [...selectedSyllables];
     newSelected[slotIndex] = undefined;
     setSelectedSyllables(newSelected);
 
-    // Kullanılan indeksi bul ve kaldır
     const originalIndex = shuffledSyllables.findIndex(
       (s, i) => s === syllable && usedIndices.has(i)
     );
@@ -146,24 +136,21 @@ export default function GameScreen({ navigation, route }: Props) {
     setSlotStatus('neutral');
   }
 
-  // Cevabı kontrol et
+  // Heceler tamamlandığında cevabın doğruluğunu kontrol ettiğim fonksiyon.
   async function checkAnswer(answer: string[]) {
     if (!currentWord) return;
 
     const isCorrect = answer.join('') === currentWord.syllables.join('');
 
     if (isCorrect) {
-      // DOĞRU CEVAP
       setSlotStatus('correct');
       setFeedbackType('correct');
       setShowConfetti(true);
       setShowFeedback(true);
       playCorrectSound();
 
-      // İlerlemeyi kaydet
       await updateProgress(currentWord.id, true, undefined, userId);
     } else {
-      // YANLIŞ CEVAP
       setSlotStatus('wrong');
       setFeedbackType('wrong');
       setShowFeedback(true);
@@ -171,52 +158,46 @@ export default function GameScreen({ navigation, route }: Props) {
     }
   }
 
-  // Geri bildirim kapatıldığında
+  // Doğru/yanlış bildirim ekranı kapandığında sonraki kelimeye geçen fonksiyonu yazdım.
   function handleFeedbackClose() {
     setShowFeedback(false);
     setShowConfetti(false);
 
     if (feedbackType === 'correct') {
-      // Sonraki kelimeye geç
       const nextIndex = currentWordIndex + 1;
       if (nextIndex < words.length) {
         setCurrentWordIndex(nextIndex);
         setupWord(words[nextIndex]);
       } else {
-        // Seviye tamamlandı!
         handleLevelComplete();
       }
     } else {
-      // Yanlış cevap — sıfırla ve tekrar dene
       if (currentWord) {
         setupWord(currentWord);
       }
     }
   }
 
-  // Seviye tamamlandığında
+  // Bölümdeki tüm kelimeler bitince seviyeyi tamamlayan fonksiyonu yazdım.
   async function handleLevelComplete() {
     setLevelComplete(true);
     playLevelCompleteSound();
     await updateProgress('', false, levelId, userId);
   }
 
-  // Bileşen kapandığında TTS'i durdur
   useEffect(() => {
     return () => { stopSpeaking(); };
   }, []);
 
-  // Yükleniyor
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
         <Text style={styles.loadingText}>Kelimeler yükleniyor...</Text>
       </View>
     );
   }
 
-  // Seviye tamamlandı ekranı
   if (levelComplete) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -243,7 +224,7 @@ export default function GameScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <ConfettiEffect visible={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Üst Bar */}
@@ -331,10 +312,10 @@ export default function GameScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   center: {
     alignItems: 'center',
@@ -344,7 +325,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: SPACING.md,
     fontSize: FONTS.body,
-    color: COLORS.textLight,
+    color: theme.textLight,
   },
   topBar: {
     flexDirection: 'row',
@@ -357,20 +338,20 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.errorLight,
+    backgroundColor: theme.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 18,
-    color: COLORS.error,
+    color: theme.error,
     fontWeight: FONTS.bold,
   },
   wordCard: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,
     marginHorizontal: SPACING.lg,
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderRadius: RADIUS.xl,
     ...SHADOWS.medium,
     marginTop: SPACING.md,
@@ -382,7 +363,7 @@ const styles = StyleSheet.create({
   speakButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: theme.primaryLight,
     paddingVertical: 6,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.round,
@@ -390,12 +371,12 @@ const styles = StyleSheet.create({
   },
   speakButtonText: {
     fontSize: FONTS.caption,
-    color: COLORS.primary,
+    color: theme.primaryDark,
     fontWeight: FONTS.bold,
   },
   hintText: {
     fontSize: FONTS.body,
-    color: COLORS.textLight,
+    color: theme.textLight,
     fontWeight: FONTS.medium,
     marginBottom: SPACING.sm,
   },
@@ -407,7 +388,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: theme.primaryLight,
   },
   slotsContainer: {
     alignItems: 'center',
@@ -437,30 +418,30 @@ const styles = StyleSheet.create({
   completeTitle: {
     fontSize: FONTS.title,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
     marginBottom: SPACING.sm,
   },
   completeSubtitle: {
     fontSize: FONTS.heading,
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   completeScore: {
     fontSize: FONTS.body,
-    color: COLORS.warning,
+    color: theme.warning,
     fontWeight: FONTS.bold,
     marginBottom: SPACING.xl,
   },
   completeButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xxl,
     borderRadius: RADIUS.round,
     ...SHADOWS.large,
   },
   completeButtonText: {
-    color: COLORS.textWhite,
+    color: theme.textWhite,
     fontSize: FONTS.heading,
     fontWeight: FONTS.bold,
   },

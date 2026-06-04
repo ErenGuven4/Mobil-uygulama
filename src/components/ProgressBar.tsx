@@ -1,22 +1,19 @@
 // ============================================
 // components/ProgressBar.tsx — İlerleme Çubuğu
 // ============================================
-// Oyun ekranında kaçıncı kelimede olduğunu
-// gösteren animasyonlu ilerleme çubuğu.
-// ============================================
-
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface ProgressBarProps {
-  /** Şu anki kelime indeksi (0'dan başlar) */
   current: number;
-  /** Toplam kelime sayısı */
   total: number;
 }
 
 export default function ProgressBar({ current, total }: ProgressBarProps) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const widthAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -24,7 +21,7 @@ export default function ProgressBar({ current, total }: ProgressBarProps) {
     Animated.timing(widthAnim, {
       toValue: percentage,
       duration: 500,
-      useNativeDriver: false, // width animasyonu native driver desteklemez
+      useNativeDriver: false,
     }).start();
   }, [current, total]);
 
@@ -50,7 +47,7 @@ export default function ProgressBar({ current, total }: ProgressBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -60,20 +57,20 @@ const styles = StyleSheet.create({
   barBackground: {
     flex: 1,
     height: 12,
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: theme.secondaryLight,
     borderRadius: RADIUS.round,
     overflow: 'hidden',
     marginRight: SPACING.sm,
   },
   barFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     borderRadius: RADIUS.round,
   },
   text: {
     fontSize: FONTS.caption,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
     minWidth: 35,
     textAlign: 'right',
   },

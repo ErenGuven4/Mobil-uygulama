@@ -1,13 +1,15 @@
-// ============================================
-// screens/AchievementsScreen.tsx — Başarılar Ekranı
-// ============================================
+// Oyuncunun kazandığı başarıları ve kilitli olan rozetleri gösterdiğim ekran.
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { View, Text, StyleSheet, ScrollView, StatusBar, ActivityIndicator } from 'react-native';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { getProgress, UserProgress } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function AchievementsScreen({ navigation, route }: any) {
   const { userId } = route.params;
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
+
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,14 +80,14 @@ export default function AchievementsScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>🏆 Başarılar</Text>
@@ -100,44 +102,49 @@ export default function AchievementsScreen({ navigation, route }: any) {
 
         <Text style={styles.sectionTitle}>ROZETLERİN</Text>
 
-        {achievements.map(ach => (
-          <View key={ach.id} style={[styles.card, !ach.unlocked && styles.cardLocked]}>
-            <View style={[styles.iconContainer, !ach.unlocked && styles.iconLocked]}>
-              <Text style={styles.icon}>{ach.unlocked ? ach.icon : '🔒'}</Text>
+        {achievements.map(ach => {
+          const lockedBg = isDarkMode ? '#1E293B' : '#F9FAFB';
+          const lockedBorder = isDarkMode ? '#334155' : '#E5E7EB';
+          const cardBg = ach.unlocked ? theme.card : lockedBg;
+          const cardBorder = ach.unlocked ? theme.answerSlotBorder : lockedBorder;
+          const iconBg = ach.unlocked ? theme.answerSlot : (isDarkMode ? '#334155' : '#E5E7EB');
+
+          return (
+            <View key={ach.id} style={[styles.card, !ach.unlocked && styles.cardLocked, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
+                <Text style={styles.icon}>{ach.unlocked ? ach.icon : '🔒'}</Text>
+              </View>
+              <View style={styles.info}>
+                <Text style={styles.title}>{ach.title}</Text>
+                <Text style={styles.desc}>{ach.desc}</Text>
+              </View>
             </View>
-            <View style={styles.info}>
-              <Text style={styles.title}>{ach.title}</Text>
-              <Text style={styles.desc}>{ach.desc}</Text>
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const getStyles = (theme: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background },
   center: { alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingTop: 50, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl,
+    backgroundColor: theme.card, borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl,
     ...SHADOWS.small,
   },
-  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
-  backButtonText: { fontSize: 22, color: COLORS.primary, fontWeight: FONTS.bold },
-  headerTitle: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: COLORS.primary },
+  headerTitle: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: theme.primary },
   content: { padding: SPACING.lg, paddingBottom: 100 },
-  statsCard: { backgroundColor: COLORS.primaryLight, padding: SPACING.lg, borderRadius: RADIUS.xl, marginBottom: SPACING.xl, alignItems: 'center', borderWidth: 2, borderColor: COLORS.answerSlotBorder },
-  statsText: { fontSize: FONTS.heading, color: COLORS.card, fontWeight: FONTS.bold, marginVertical: 4 },
-  sectionTitle: { fontSize: FONTS.caption, fontWeight: FONTS.bold, color: COLORS.textLight, marginBottom: SPACING.sm, marginLeft: SPACING.sm, letterSpacing: 1 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.lg, marginBottom: SPACING.md, borderWidth: 2, borderColor: COLORS.answerSlotBorder, ...SHADOWS.small },
-  cardLocked: { opacity: 0.6, backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
-  iconContainer: { width: 50, height: 50, borderRadius: 25, backgroundColor: COLORS.answerSlot, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
-  iconLocked: { backgroundColor: '#E5E7EB' },
+  statsCard: { backgroundColor: theme.primaryLight, padding: SPACING.lg, borderRadius: RADIUS.xl, marginBottom: SPACING.xl, alignItems: 'center', borderWidth: 2, borderColor: theme.answerSlotBorder },
+  statsText: { fontSize: FONTS.heading, color: theme.textWhite, fontWeight: FONTS.bold, marginVertical: 4 },
+  sectionTitle: { fontSize: FONTS.caption, fontWeight: FONTS.bold, color: theme.textLight, marginBottom: SPACING.sm, marginLeft: SPACING.sm, letterSpacing: 1 },
+  card: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md, borderRadius: RADIUS.lg, marginBottom: SPACING.md, borderWidth: 2, ...SHADOWS.small },
+  cardLocked: { opacity: 0.6 },
+  iconContainer: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
   icon: { fontSize: 24 },
   info: { flex: 1 },
-  title: { fontSize: FONTS.body, fontWeight: FONTS.bold, color: COLORS.text, marginBottom: 2 },
-  desc: { fontSize: FONTS.caption, color: COLORS.textLight },
+  title: { fontSize: FONTS.body, fontWeight: FONTS.bold, color: theme.text, marginBottom: 2 },
+  desc: { fontSize: FONTS.caption, color: theme.textLight },
 });

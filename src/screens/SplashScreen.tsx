@@ -1,18 +1,20 @@
-// ============================================
-// screens/SplashScreen.tsx — Karşılama Ekranı
-// ============================================
+// Uygulama ilk açıldığında gösterdiğim animasyonlu karşılama ekranı.
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
   StatusBar, Image,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
 }
 
 export default function SplashScreen({ navigation }: Props) {
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
+
   const logoScale = useRef(new Animated.Value(0)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleSlide = useRef(new Animated.Value(30)).current;
@@ -21,13 +23,13 @@ export default function SplashScreen({ navigation }: Props) {
   const bgAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Sıralı giriş animasyonları
+    // Giriş animasyonlarını sırayla tetikledim.
     Animated.sequence([
-      // 1. Logo büyüsün
+      // Logo yaylanarak büyüsün diye spring kullandım.
       Animated.spring(logoScale, {
         toValue: 1, useNativeDriver: true, speed: 4, bounciness: 14,
       }),
-      // 2. Başlık görünsün
+      // Başlık yazılarını görünür yaptım.
       Animated.parallel([
         Animated.timing(titleOpacity, {
           toValue: 1, duration: 600, useNativeDriver: true,
@@ -36,12 +38,12 @@ export default function SplashScreen({ navigation }: Props) {
           toValue: 0, duration: 600, useNativeDriver: true,
         }),
       ]),
-      // 3. Buton görünsün
+      // Başlama butonunu görünür hale getirdim.
       Animated.timing(btnOpacity, {
         toValue: 1, duration: 400, useNativeDriver: true,
       }),
     ]).start(() => {
-      // Buton zıplama animasyonu (sonsuz döngü)
+      // Butonun sürekli yukarı aşağı zıplaması için sonsuz döngü oluşturdum.
       Animated.loop(
         Animated.sequence([
           Animated.timing(btnBounce, {
@@ -54,7 +56,7 @@ export default function SplashScreen({ navigation }: Props) {
       ).start();
     });
 
-    // Arka plan renk geçişi
+    // Arka plandaki renklerin yumuşak geçiş yapmasını sağladım.
     Animated.loop(
       Animated.sequence([
         Animated.timing(bgAnim, {
@@ -69,14 +71,14 @@ export default function SplashScreen({ navigation }: Props) {
 
   const bgColor = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [COLORS.backgroundGradientStart, COLORS.backgroundGradientEnd],
+    outputRange: [theme.backgroundGradientStart, theme.backgroundGradientEnd],
   });
 
   return (
     <Animated.View style={[styles.container, { backgroundColor: bgColor }]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-      {/* Dekoratif arka plan emojileri */}
+      {/* Arka plana süs olsun diye eklediğim emojiler */}
       <View style={styles.bgEmojis}>
         <Text style={[styles.bgEmoji, { top: '10%', left: '10%' }]}>📚</Text>
         <Text style={[styles.bgEmoji, { top: '15%', right: '15%' }]}>✨</Text>
@@ -86,12 +88,11 @@ export default function SplashScreen({ navigation }: Props) {
         <Text style={[styles.bgEmoji, { top: '55%', right: '5%' }]}>🦋</Text>
       </View>
 
-      {/* Logo / Maskot */}
+      {/* Uygulamanın logosu ve arkasındaki çember */}
       <Animated.View style={[
         styles.logoContainer,
         { transform: [{ scale: logoScale }] },
       ]}>
-        {/* Kendi logon için: frontend/assets/logo.png dosyasını koymalısın */}
         <Image 
           source={require('../../assets/logo.png')} 
           style={styles.logoImage} 
@@ -100,7 +101,7 @@ export default function SplashScreen({ navigation }: Props) {
         <View style={styles.logoCircle} />
       </Animated.View>
 
-      {/* Başlık */}
+      {/* Oyun adını ve alt başlığı yazdığım kısım */}
       <Animated.View style={{
         opacity: titleOpacity,
         transform: [{ translateY: titleSlide }],
@@ -109,7 +110,7 @@ export default function SplashScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Harfler birleşsin, kelimeler doğsun! ✨</Text>
       </Animated.View>
 
-      {/* Başla Butonu */}
+      {/* Oyunu başlatan buton */}
       <Animated.View style={{
         opacity: btnOpacity,
         transform: [{ translateY: btnBounce }],
@@ -123,7 +124,7 @@ export default function SplashScreen({ navigation }: Props) {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Alt bilgi */}
+      {/* Ekranın en altında duran bilgi yazısı */}
       <Animated.View style={[styles.footer, { opacity: btnOpacity }]}>
         <Text style={styles.footerText}>Heceleyerek öğren 🎓</Text>
       </Animated.View>
@@ -131,7 +132,7 @@ export default function SplashScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: COLORS.warning,
+    backgroundColor: theme.warning,
     opacity: 0.15,
   },
   logoImage: {
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
     textShadowColor: 'rgba(124, 58, 237, 0.2)',
@@ -176,19 +177,19 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FONTS.body,
-    color: COLORS.textLight,
+    color: theme.textLight,
     textAlign: 'center',
     marginBottom: SPACING.xxl,
   },
   startButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xxl + 16,
     borderRadius: RADIUS.round,
     ...SHADOWS.large,
   },
   startButtonText: {
-    color: COLORS.textWhite,
+    color: theme.textWhite,
     fontSize: FONTS.subtitle,
     fontWeight: FONTS.bold,
   },
@@ -198,6 +199,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: FONTS.caption,
-    color: COLORS.textLight,
+    color: theme.textLight,
   },
 });

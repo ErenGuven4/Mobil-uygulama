@@ -1,13 +1,12 @@
-// ============================================
-// screens/SettingsScreen.tsx — Ayarlar Ekranı
-// ============================================
+// Ses ayarlarını, karanlık modu ve çıkış yapma seçeneklerini yönettiğim ekran.
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Switch,
-  ScrollView, Alert, StatusBar, Image
+  ScrollView, Alert, StatusBar
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { isSoundEffectsEnabled, setSoundEffectsEnabled } from '../utils/audio';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
@@ -16,8 +15,10 @@ interface Props {
 
 export default function SettingsScreen({ navigation, route }: Props) {
   const { userId } = route.params || { userId: 'Oyuncu' };
+  const { isDarkMode, theme, toggleDarkMode } = useTheme();
+  const styles = getStyles(theme);
   
-  // Ayar state'leri
+  // Ses efektinin açık olup olmadığını tuttuğum state.
   const [soundEnabled, setSoundEnabled] = useState(isSoundEffectsEnabled);
 
   const handleSoundToggle = (val: boolean) => {
@@ -25,7 +26,7 @@ export default function SettingsScreen({ navigation, route }: Props) {
     setSoundEffectsEnabled(val);
   };
 
-  // Çıkış yapma işlemi
+  // Başka bir isimle girmek için çıkış yapma fonksiyonunu yazdım.
   function handleLogout() {
     Alert.alert(
       'Çıkış Yap',
@@ -43,9 +44,9 @@ export default function SettingsScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-      {/* Üst Başlık (Header) */}
+      {/* Ayarlar başlığını buraya ekledim */}
       <View style={styles.header}>
         <View style={styles.placeholder} />
         <Text style={styles.headerTitle}>⚙️ Ayarlar</Text>
@@ -54,7 +55,7 @@ export default function SettingsScreen({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* Profil Kartı (Duolingo Tarzı) */}
+        {/* Kullanıcının adının ilk harfini avatar olarak gösterdiğim profil alanı */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{userId.charAt(0).toUpperCase()}</Text>
@@ -65,11 +66,12 @@ export default function SettingsScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>SES VE MÜZİK</Text>
+        <Text style={styles.sectionTitle}>SES VE GÖRÜNÜM</Text>
 
-        {/* Ayar Listesi */}
+        {/* Ses ve karanlık mod anahtarlarını listelediğim yer */}
         <View style={styles.settingsGroup}>
           
+          {/* Ses efektini açıp kapatan Switch */}
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Text style={styles.settingIcon}>🔊</Text>
@@ -78,8 +80,24 @@ export default function SettingsScreen({ navigation, route }: Props) {
             <Switch 
               value={soundEnabled} 
               onValueChange={handleSoundToggle} 
-              trackColor={{ false: COLORS.disabled, true: COLORS.success }}
-              thumbColor={COLORS.card}
+              trackColor={{ false: theme.disabled, true: theme.success }}
+              thumbColor={theme.card}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Karanlık modu açıp kapatan Switch */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>🌙</Text>
+              <Text style={styles.settingLabel}>Karanlık Mod</Text>
+            </View>
+            <Switch 
+              value={isDarkMode} 
+              onValueChange={toggleDarkMode} 
+              trackColor={{ false: theme.disabled, true: theme.success }}
+              thumbColor={theme.card}
             />
           </View>
 
@@ -100,10 +118,10 @@ export default function SettingsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -112,28 +130,15 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
     ...SHADOWS.small,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.background,
-  },
-  backButtonText: {
-    fontSize: 22,
-    color: COLORS.primary,
-    fontWeight: FONTS.bold,
-  },
   headerTitle: {
     fontSize: FONTS.heading,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
   },
   placeholder: {
     width: 40,
@@ -145,19 +150,19 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     padding: SPACING.lg,
     borderRadius: RADIUS.xl,
     marginBottom: SPACING.xl,
     borderWidth: 2,
-    borderColor: COLORS.answerSlotBorder,
+    borderColor: theme.answerSlotBorder,
     ...SHADOWS.small,
   },
   avatarContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
@@ -165,7 +170,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: FONTS.title,
     fontWeight: FONTS.bold,
-    color: COLORS.card,
+    color: theme.textWhite,
   },
   profileInfo: {
     flex: 1,
@@ -173,28 +178,28 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: FONTS.subtitle,
     fontWeight: FONTS.bold,
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: 4,
   },
   profileStatus: {
     fontSize: FONTS.caption,
-    color: COLORS.primary,
+    color: theme.primary,
     fontWeight: FONTS.medium,
   },
   sectionTitle: {
     fontSize: FONTS.caption,
     fontWeight: FONTS.bold,
-    color: COLORS.textLight,
+    color: theme.textLight,
     marginBottom: SPACING.sm,
     marginLeft: SPACING.sm,
     letterSpacing: 1,
   },
   settingsGroup: {
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderRadius: RADIUS.xl,
     marginBottom: SPACING.xl,
     borderWidth: 2,
-    borderColor: COLORS.answerSlotBorder,
+    borderColor: theme.answerSlotBorder,
     overflow: 'hidden',
   },
   settingItem: {
@@ -213,12 +218,12 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: FONTS.body,
-    color: COLORS.text,
+    color: theme.text,
     fontWeight: FONTS.medium,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
     marginHorizontal: SPACING.md,
   },
   actionButton: {
@@ -233,11 +238,11 @@ const styles = StyleSheet.create({
   actionText: {
     flex: 1,
     fontSize: FONTS.body,
-    color: COLORS.error,
+    color: theme.error,
     fontWeight: FONTS.bold,
   },
   chevron: {
     fontSize: 24,
-    color: COLORS.disabled,
+    color: theme.disabled,
   },
 });

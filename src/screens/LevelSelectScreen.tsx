@@ -1,14 +1,13 @@
-// ============================================
-// screens/LevelSelectScreen.tsx — Seviye Seçim
-// ============================================
+// Oyundaki bölüm listesini (yol haritasını) gösterdiğim seviye seçme ekranı.
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Animated,
   StatusBar, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import LevelNode from '../components/LevelNode';
 import { getLevels, getProgress, Level, UserProgress } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
@@ -17,12 +16,15 @@ interface Props {
 
 export default function LevelSelectScreen({ navigation, route }: Props) {
   const { userId } = route.params || { userId: 'default' };
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
+
   const [levels, setLevels] = useState<Level[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const headerAnim = useRef(new Animated.Value(0)).current;
 
-  // Varsayılan seviyeler (offline fallback)
+  // Sunucudan veri çekilemezse kullanılacak yedek seviye listesini tanımladım.
   const defaultLevels: Level[] = [
     { id: 1, name: '2 Heceli Kolay', description: 'İki heceli basit kelimeler', requiredScore: 0 },
     { id: 2, name: '2 Heceli Orta', description: 'İki heceli orta zorlukta', requiredScore: 50 },
@@ -38,7 +40,6 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
     }).start();
   }, []);
 
-  // Ekran odaklandığında verileri yenile
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadData();
@@ -70,15 +71,16 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
     }
   }
 
+  // Seviyenin tamamlanma, aktif veya kilitli olma durumunu bulduğum fonksiyon.
   function getLevelStatus(levelId: number): 'completed' | 'current' | 'locked' {
     if (!progress) return levelId === 1 ? 'current' : 'locked';
     if (progress.completedLevels.includes(levelId)) return 'completed';
     if (levelId === progress.currentLevel) return 'current';
-    // Tamamlanan seviyenin bir üstü de açık olsun
     if (levelId <= progress.currentLevel) return 'completed';
     return 'locked';
   }
 
+  // Tıklanan bölüme gitmeyi sağlayan fonksiyonu yazdım.
   function handleLevelPress(levelId: number) {
     const status = getLevelStatus(levelId);
     if (status !== 'locked') {
@@ -89,7 +91,7 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
         <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
@@ -97,9 +99,9 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-      {/* Üst Başlık */}
+      {/* Sayfa başlığı ve geri tuşunu eklediğim kısım */}
       <Animated.View style={[styles.header, {
         opacity: headerAnim,
         transform: [{ translateY: headerAnim.interpolate({
@@ -108,7 +110,9 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
       }]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            navigation.replace('NameEntry');
+          }}
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
@@ -121,7 +125,7 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
         <View style={styles.backButton} />
       </Animated.View>
 
-      {/* Seviye Yol Haritası */}
+      {/* Seviyeleri yol haritası şeklinde listelediğim kaydırılabilir alan */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -132,7 +136,6 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
 
         {levels.map((level, index) => {
           const status = getLevelStatus(level.id);
-          // Zigzag efekti — her seviye sağa/sola kaydırılır
           const offsetX = index % 2 === 0 ? -30 : 30;
 
           return (
@@ -157,10 +160,10 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   center: {
     alignItems: 'center',
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: SPACING.md,
     fontSize: FONTS.body,
-    color: COLORS.textLight,
+    color: theme.textLight,
   },
   header: {
     flexDirection: 'row',
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderBottomLeftRadius: RADIUS.xl,
     borderBottomRightRadius: RADIUS.xl,
     ...SHADOWS.medium,
@@ -189,11 +192,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   backButtonText: {
     fontSize: 22,
-    color: COLORS.primary,
+    color: theme.primary,
     fontWeight: FONTS.bold,
   },
   headerCenter: {
@@ -202,11 +205,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FONTS.subtitle,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
   },
   headerSubtitle: {
     fontSize: FONTS.caption,
-    color: COLORS.warning,
+    color: theme.warning,
     fontWeight: FONTS.semiBold,
     marginTop: 2,
   },
@@ -221,7 +224,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 3,
     height: '100%',
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: theme.primaryLight,
     opacity: 0.3,
     left: '50%',
     marginLeft: -1.5,

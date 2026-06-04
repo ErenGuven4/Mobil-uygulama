@@ -1,28 +1,20 @@
 // ============================================
 // components/LevelNode.tsx — Seviye Düğümü
 // ============================================
-// Seviye seçim ekranındaki Duolingo tarzı
-// yol haritası düğümleri.
-// ============================================
-
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
   Text,
   StyleSheet,
   Animated,
-  View,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface LevelNodeProps {
-  /** Seviye numarası */
   levelId: number;
-  /** Seviye adı */
   name: string;
-  /** Seviye durumu */
   status: 'completed' | 'current' | 'locked';
-  /** Tıklandığında */
   onPress: () => void;
 }
 
@@ -32,19 +24,19 @@ export default function LevelNode({
   status,
   onPress,
 }: LevelNodeProps) {
-  // Aktif seviye için nabız (pulse) animasyonu
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  // Giriş animasyonu
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    // Giriş animasyonu
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
-        delay: levelId * 150, // Her seviye sırayla görünsün
+        delay: levelId * 150,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
@@ -55,7 +47,6 @@ export default function LevelNode({
       }),
     ]).start();
 
-    // Aktif seviye nabız animasyonu
     if (status === 'current') {
       const pulse = Animated.loop(
         Animated.sequence([
@@ -76,7 +67,6 @@ export default function LevelNode({
     }
   }, [status]);
 
-  // Duruma göre emoji
   const getStatusEmoji = () => {
     switch (status) {
       case 'completed':
@@ -88,15 +78,14 @@ export default function LevelNode({
     }
   };
 
-  // Duruma göre arka plan rengi
   const getNodeColor = () => {
     switch (status) {
       case 'completed':
-        return COLORS.levelCompleted;
+        return theme.levelCompleted;
       case 'current':
-        return COLORS.levelCurrent;
+        return theme.levelCurrent;
       case 'locked':
-        return COLORS.levelLocked;
+        return theme.levelLocked;
     }
   };
 
@@ -147,7 +136,7 @@ export default function LevelNode({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     marginVertical: SPACING.md,
@@ -165,7 +154,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 3,
-    borderColor: COLORS.warning,
+    borderColor: theme.warning,
   },
   lockedNode: {
     opacity: 0.5,
@@ -177,20 +166,20 @@ const styles = StyleSheet.create({
   levelNumber: {
     fontSize: FONTS.caption,
     fontWeight: FONTS.bold,
-    color: COLORS.textWhite,
+    color: theme.textWhite,
   },
   lockedText: {
-    color: COLORS.levelLockedText,
+    color: theme.levelLockedText,
   },
   name: {
     marginTop: SPACING.sm,
     fontSize: FONTS.caption,
     fontWeight: FONTS.semiBold,
-    color: COLORS.text,
+    color: theme.text,
     textAlign: 'center',
     maxWidth: 120,
   },
   lockedNameText: {
-    color: COLORS.levelLockedText,
+    color: theme.levelLockedText,
   },
 });

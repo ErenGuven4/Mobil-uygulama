@@ -1,34 +1,13 @@
-// ============================================
-// api/api.ts — Backend API Bağlantısı
-// ============================================
-// Bu dosya frontend ile backend arasındaki
-// tüm HTTP isteklerini yönetir.
-// ============================================
+// Sunucu ile haberleşmeyi sağlamak için yazdığım api fonksiyonları.
 
-// ============================================
-// ÖNEMLİ: API adresini kendi bilgisayarınıza göre ayarlayın!
-// ============================================
-// Expo Go kullanıyorsanız, localhost yerine
-// bilgisayarınızın yerel IP adresini kullanın.
-// Örnek: const BASE_URL = 'http://192.168.1.100:3001/api';
-//
-// IP adresinizi bulmak için terminalde:
-//   Windows: ipconfig
-//   Mac/Linux: ifconfig
-// ============================================
 import Constants from 'expo-constants';
 
-// Telefonun backend'e bağlanabilmesi için Expo'nun sağladığı IP adresini otomatik çekiyoruz
+// Telefondan bağlanırken bilgisayarın IP adresini otomatik çektim.
 const hostUri = Constants.expoConfig?.hostUri;
 const localIp = hostUri ? hostUri.split(':')[0] : '192.168.1.19';
-
 const BASE_URL = `http://${localIp}:3001/api`;
 
-// ============================================
-// Tip Tanımlamaları (TypeScript)
-// ============================================
-
-/** Tek bir kelime objesi */
+// Kelime verisinin yapısını tanımladım.
 export interface Word {
   id: string;
   word: string;
@@ -37,7 +16,7 @@ export interface Word {
   emoji: string;
 }
 
-/** Seviye bilgisi */
+// Her seviyenin (bölümün) bilgilerini tutan interface.
 export interface Level {
   id: number;
   name: string;
@@ -45,7 +24,7 @@ export interface Level {
   requiredScore: number;
 }
 
-/** Kullanıcı ilerleme bilgisi */
+// Kullanıcının oyundaki durum bilgilerini tutan interface.
 export interface UserProgress {
   userId: string;
   completedLevels: number[];
@@ -55,21 +34,14 @@ export interface UserProgress {
   createdAt: string;
 }
 
-/** API yanıt formatı */
+// Sunucudan gelen genel cevap formatını belirledim.
 interface ApiResponse<T> {
   success: boolean;
   message?: string;
   [key: string]: any;
 }
 
-// ============================================
-// API Fonksiyonları
-// ============================================
-
-/**
- * Seviyeye göre kelimeleri getir
- * @param level - Seviye numarası (1-5)
- */
+// Seçilen bölüme ait kelimeleri sunucudan çeken fonksiyonu yazdım.
 export async function getWordsByLevel(level: number): Promise<Word[]> {
   try {
     const response = await fetch(`${BASE_URL}/words?level=${level}`);
@@ -86,9 +58,7 @@ export async function getWordsByLevel(level: number): Promise<Word[]> {
   }
 }
 
-/**
- * Tüm seviyelerin listesini getir
- */
+// Bölümlerin listesini sunucudan getiren fonksiyonu yazdım.
 export async function getLevels(): Promise<Level[]> {
   try {
     const response = await fetch(`${BASE_URL}/levels`);
@@ -104,10 +74,7 @@ export async function getLevels(): Promise<Level[]> {
   }
 }
 
-/**
- * Kullanıcı ilerlemesini getir
- * @param userId - Kullanıcı ID (varsayılan: "default")
- */
+// Kullanıcının kaldığı yer ve skor gibi ilerleme verilerini çeken fonksiyonu yazdım.
 export async function getProgress(userId: string = 'default'): Promise<UserProgress | null> {
   try {
     const response = await fetch(`${BASE_URL}/progress?userId=${userId}`);
@@ -123,12 +90,31 @@ export async function getProgress(userId: string = 'default'): Promise<UserProgr
   }
 }
 
-/**
- * Kullanıcı ilerlemesini güncelle
- * @param wordId - Tamamlanan kelimenin ID'si
- * @param correct - Doğru mu cevaplandı?
- * @param levelId - Seviye tamamlandıysa seviye ID'si
- */
+export interface LeaderboardEntry {
+  userId: string;
+  score: number;
+  currentLevel: number;
+  completedWordsCount: number;
+}
+
+// Skor tablosundaki oyuncuları sunucudan çeken fonksiyonu yazdım.
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  try {
+    const response = await fetch(`${BASE_URL}/progress/leaderboard`);
+    const data = await response.json();
+
+    if (data.success) {
+      return data.leaderboard;
+    }
+    throw new Error(data.message || 'Skor tablosu yüklenemedi');
+  } catch (error) {
+    console.error('API Hatası (getLeaderboard):', error);
+    return [];
+  }
+}
+
+
+// Kullanıcı kelime bildiğinde veya bölüm bitirdiğinde durumu sunucuda güncelleyen fonksiyonu yazdım.
 export async function updateProgress(
   wordId: string,
   correct: boolean,
@@ -166,9 +152,7 @@ export async function updateProgress(
   }
 }
 
-/**
- * İlerlemeyi sıfırla
- */
+// Kullanıcı sıfırlama yaptığında sunucudaki verilerini de sıfırlayan fonksiyonu yazdım.
 export async function resetProgress(): Promise<boolean> {
   try {
     const response = await fetch(`${BASE_URL}/progress/reset`, {
@@ -187,9 +171,7 @@ export async function resetProgress(): Promise<boolean> {
   }
 }
 
-/**
- * Tüm kelimeleri getir
- */
+// Sunucudaki tüm kelimeleri tek seferde getiren fonksiyonu yazdım.
 export async function getAllWords(): Promise<Word[]> {
   try {
     const response = await fetch(`${BASE_URL}/words`);

@@ -1,34 +1,30 @@
-// ============================================
-// screens/NameEntryScreen.tsx — İsim Girişi
-// ============================================
-// Kullanıcı adını girer; profil oluşturulur
-// veya mevcut profil yüklenir.
-// ============================================
-
+// Oyuncunun ismini girdiği ve önceki profillerini listelediğim giriş ekranı.
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Animated, TextInput,
   TouchableOpacity, StatusBar, KeyboardAvoidingView,
   Platform, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
-import { getProgress, UserProgress } from '../api/api';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { getProgress } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
 }
 
-// Saklanan profilleri tutan basit bellek (uygulama açık kaldıkça)
-// Gerçek uygulamada AsyncStorage kullanılır
 let savedProfiles: string[] = [];
 
 export default function NameEntryScreen({ navigation }: Props) {
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
+
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [profiles, setProfiles] = useState<string[]>(savedProfiles);
 
-  // Animasyonlar
+  // Kart ve yazı animasyonlarını tanımladım.
   const titleAnim  = useRef(new Animated.Value(0)).current;
   const cardAnim   = useRef(new Animated.Value(0)).current;
   const shakeAnim  = useRef(new Animated.Value(0)).current;
@@ -40,7 +36,7 @@ export default function NameEntryScreen({ navigation }: Props) {
     ]).start();
   }, []);
 
-  // Hatalı giriş sallama animasyonu
+  // İsim eksik veya hatalı girildiğinde kartı sallatmak için yazdığım fonksiyon.
   function shake() {
     Animated.sequence([
       Animated.timing(shakeAnim, { toValue: 10,  duration: 60, useNativeDriver: true }),
@@ -50,7 +46,7 @@ export default function NameEntryScreen({ navigation }: Props) {
     ]).start();
   }
 
-  // Devam et butonuna basıldığında
+  // İsmi onaylayıp bir sonraki ekrana geçiş yaptığım fonksiyon.
   async function handleContinue(selectedName?: string) {
     const trimmedName = (selectedName ?? name).trim();
 
@@ -69,15 +65,12 @@ export default function NameEntryScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      // Bu isimle ilerleme getir (yoksa backend otomatik oluşturur)
       await getProgress(trimmedName);
 
-      // Profili listeye ekle (tekrar ekleme)
       if (!savedProfiles.includes(trimmedName)) {
-        savedProfiles = [trimmedName, ...savedProfiles].slice(0, 5); // max 5 profil
+        savedProfiles = [trimmedName, ...savedProfiles].slice(0, 5);
       }
 
-      // Ana tab ekranına geç, userId'yi params olarak gönder
       navigation.replace('MainTabs', { userId: trimmedName });
     } catch {
       setError('Bir hata oluştu, tekrar dene.');
@@ -91,7 +84,7 @@ export default function NameEntryScreen({ navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -123,7 +116,7 @@ export default function NameEntryScreen({ navigation }: Props) {
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
             placeholder="Adını buraya yaz..."
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={theme.textLight}
             value={name}
             onChangeText={(t) => { setName(t); setError(''); }}
             maxLength={20}
@@ -143,7 +136,7 @@ export default function NameEntryScreen({ navigation }: Props) {
             disabled={loading}
           >
             {loading
-              ? <ActivityIndicator color={COLORS.textWhite} />
+              ? <ActivityIndicator color={theme.textWhite} />
               : <Text style={styles.buttonText}>Devam Et 🎯</Text>
             }
           </TouchableOpacity>
@@ -172,10 +165,10 @@ export default function NameEntryScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   scroll: {
     alignItems: 'center',
@@ -193,19 +186,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: FONTS.bold,
-    color: COLORS.primary,
+    color: theme.primary,
     textAlign: 'center',
     marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: FONTS.body,
-    color: COLORS.textLight,
+    color: theme.textLight,
     textAlign: 'center',
     marginBottom: SPACING.xxl,
   },
   card: {
     width: '100%',
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderRadius: RADIUS.xl,
     padding: SPACING.xl,
     ...SHADOWS.medium,
@@ -214,31 +207,31 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: FONTS.body,
     fontWeight: FONTS.semiBold,
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: SPACING.sm,
   },
   input: {
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
     borderRadius: RADIUS.lg,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     fontSize: FONTS.subtitle,
-    color: COLORS.text,
+    color: theme.text,
     borderWidth: 2,
-    borderColor: COLORS.primaryLight,
+    borderColor: theme.primaryLight,
     marginBottom: SPACING.md,
   },
   inputError: {
-    borderColor: COLORS.error,
+    borderColor: theme.error,
   },
   errorText: {
     fontSize: FONTS.caption,
-    color: COLORS.error,
+    color: theme.error,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     borderRadius: RADIUS.round,
     paddingVertical: SPACING.lg,
     alignItems: 'center',
@@ -249,13 +242,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: COLORS.textWhite,
+    color: theme.textWhite,
     fontSize: FONTS.heading,
     fontWeight: FONTS.bold,
   },
   profilesCard: {
     width: '100%',
-    backgroundColor: COLORS.card,
+    backgroundColor: theme.card,
     borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     ...SHADOWS.small,
@@ -263,7 +256,7 @@ const styles = StyleSheet.create({
   profilesTitle: {
     fontSize: FONTS.caption,
     fontWeight: FONTS.semiBold,
-    color: COLORS.textLight,
+    color: theme.textLight,
     marginBottom: SPACING.sm,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -271,7 +264,7 @@ const styles = StyleSheet.create({
   profileChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
     borderRadius: RADIUS.lg,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
@@ -285,11 +278,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.body,
     fontWeight: FONTS.semiBold,
-    color: COLORS.text,
+    color: theme.text,
   },
   profileArrow: {
     fontSize: FONTS.body,
-    color: COLORS.primary,
+    color: theme.primary,
     fontWeight: FONTS.bold,
   },
 });

@@ -4,13 +4,16 @@ import LevelSelectScreen from '../screens/LevelSelectScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SoundboardScreen from '../screens/SoundboardScreen';
-import { COLORS } from '../constants/theme';
-import { Text, Platform } from 'react-native';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import { useTheme } from '../context/ThemeContext';
+import { Platform } from 'react-native';
+import { Entypo } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs({ route }: any) {
   const { userId } = route.params;
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
@@ -18,9 +21,9 @@ export default function MainTabs({ route }: any) {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: COLORS.card,
+          backgroundColor: theme.card,
           borderTopWidth: 2,
-          borderTopColor: COLORS.answerSlotBorder,
+          borderTopColor: theme.answerSlotBorder,
           height: Platform.OS === 'ios' ? 85 : 65,
           paddingBottom: Platform.OS === 'ios' ? 25 : 0,
           paddingTop: Platform.OS === 'ios' ? 10 : 0,
@@ -31,8 +34,8 @@ export default function MainTabs({ route }: any) {
           padding: 0,
           margin: 0,
         },
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textLight,
       }}
     >
       <Tab.Screen 
@@ -40,8 +43,8 @@ export default function MainTabs({ route }: any) {
         component={LevelSelectScreen} 
         initialParams={{ userId }}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.4, textAlign: 'center' }}>🗺️</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Entypo name="map" size={focused ? 28 : 24} color={color} style={{ opacity: focused ? 1 : 0.6 }} />
           ),
         }}
       />
@@ -50,8 +53,8 @@ export default function MainTabs({ route }: any) {
         component={SoundboardScreen} 
         initialParams={{ userId }}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.4, textAlign: 'center' }}>🗣️</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Entypo name="megaphone" size={focused ? 28 : 24} color={color} style={{ opacity: focused ? 1 : 0.6 }} />
           ),
         }}
       />
@@ -60,8 +63,18 @@ export default function MainTabs({ route }: any) {
         component={AchievementsScreen} 
         initialParams={{ userId }}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.4, textAlign: 'center' }}>🏆</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Entypo name="trophy" size={focused ? 28 : 24} color={color} style={{ opacity: focused ? 1 : 0.6 }} />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="Skorlar" 
+        component={LeaderboardScreen} 
+        initialParams={{ userId }}
+        options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <Entypo name="bar-graph" size={focused ? 28 : 24} color={color} style={{ opacity: focused ? 1 : 0.6 }} />
           ),
         }}
       />
@@ -70,11 +83,12 @@ export default function MainTabs({ route }: any) {
         component={SettingsScreen} 
         initialParams={{ userId }}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.4, textAlign: 'center' }}>⚙️</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Entypo name="cog" size={focused ? 28 : 24} color={color} style={{ opacity: focused ? 1 : 0.6 }} />
           ),
         }}
       />
     </Tab.Navigator>
   );
 }
+

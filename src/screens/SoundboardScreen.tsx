@@ -1,12 +1,17 @@
+// Geçilen bölümlerdeki kelimelerin listesini gösterip sesli okuttuğum ses paneli ekranı.
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { speakWord } from '../utils/audio';
 import { getAllWords, getProgress, Word, UserProgress } from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SoundboardScreen({ route }: any) {
   const { userId } = route.params || { userId: 'default' };
+  const { theme, isDarkMode } = useTheme();
+  const styles = getStyles(theme);
+
   const [words, setWords] = useState<Word[]>([]);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,30 +48,30 @@ export default function SoundboardScreen({ route }: any) {
   const maxLevelCompleted = progress?.completedLevels?.length ? Math.max(...progress.completedLevels) : 0;
   const currentLevelToPlay = maxLevelCompleted + 1;
 
-  // Kelimeleri bölümlerine göre (level) grupla
   const groupedWords = words.reduce((acc, word) => {
     if (!acc[word.level]) acc[word.level] = [];
     acc[word.level].push(word);
     return acc;
   }, {} as Record<number, Word[]>);
 
-  // Bölüm numaralarını sıraya diz
   const levels = Object.keys(groupedWords).map(Number).sort((a, b) => a - b);
   
-  // Arka plan renkleri (sırayla tekrar edecek)
-  const levelColors = ['#FF9A9E', '#A18CD1', '#34D399', '#FBBF24', '#60A5FA'];
+  // Arka plan renkleri (koyu modda biraz daha koyu/uygun tonlar seçilebilir)
+  const lightLevelColors = ['#FF9A9E', '#A18CD1', '#34D399', '#FBBF24', '#60A5FA'];
+  const darkLevelColors = ['#9A4D50', '#5E4E80', '#1F6B4E', '#806010', '#2E5080'];
+  const levelColors = isDarkMode ? darkLevelColors : lightLevelColors;
 
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <View style={styles.header}>
         <View style={styles.placeholder} />
         <Text style={styles.headerTitle}>🗣️ Seslerle Öğren</Text>
@@ -82,6 +87,7 @@ export default function SoundboardScreen({ route }: any) {
           const isUnlocked = level <= currentLevelToPlay;
           const sectionColor = levelColors[(level - 1) % levelColors.length];
           const sectionWords = groupedWords[level];
+          const lockedBg = isDarkMode ? '#334155' : '#E5E7EB';
 
           return (
             <View key={level} style={[styles.section, !isUnlocked && styles.sectionLocked]}>
@@ -90,7 +96,7 @@ export default function SoundboardScreen({ route }: any) {
                 <Text style={styles.sectionTitle}>BÖLÜM {level}</Text>
               </View>
               
-              <View style={[styles.cardContainer, { backgroundColor: isUnlocked ? sectionColor : '#E5E7EB' }]}>
+              <View style={[styles.cardContainer, { backgroundColor: isUnlocked ? sectionColor : lockedBg }]}>
                 {sectionWords.map((item, idx) => (
                   <TouchableOpacity
                     key={idx}
@@ -121,34 +127,34 @@ export default function SoundboardScreen({ route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const getStyles = (theme: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingTop: 50, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl,
+    backgroundColor: theme.card, borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl,
     ...SHADOWS.small,
   },
-  headerTitle: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: COLORS.primary },
+  headerTitle: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: theme.primary },
   placeholder: { width: 40 },
   content: { padding: SPACING.lg, paddingBottom: 100 },
-  pageSubtitle: { fontSize: FONTS.body, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 24 },
+  pageSubtitle: { fontSize: FONTS.body, color: theme.textLight, textAlign: 'center', marginBottom: SPACING.xl, lineHeight: 24 },
   section: { marginBottom: SPACING.xl },
   sectionLocked: { opacity: 0.8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm, paddingHorizontal: SPACING.xs },
   sectionIcon: { fontSize: 20, marginRight: SPACING.sm },
-  sectionTitle: { fontSize: FONTS.caption, fontWeight: FONTS.bold, color: COLORS.text, letterSpacing: 1 },
+  sectionTitle: { fontSize: FONTS.caption, fontWeight: FONTS.bold, color: theme.text, letterSpacing: 1 },
   cardContainer: {
     flexDirection: 'row', flexWrap: 'wrap', padding: SPACING.md,
     borderRadius: RADIUS.xl, ...SHADOWS.medium,
   },
   wordButton: {
-    backgroundColor: COLORS.card, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
+    backgroundColor: theme.card, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.xl, marginRight: SPACING.sm, marginBottom: SPACING.sm, ...SHADOWS.small
   },
-  wordButtonActive: { transform: [{ scale: 1.1 }], backgroundColor: '#FFF5F7' },
-  wordButtonLocked: { backgroundColor: '#F3F4F6', elevation: 0, shadowOpacity: 0 },
-  wordText: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: COLORS.text },
-  wordTextActive: { color: COLORS.primaryDark },
-  wordTextLocked: { color: '#9CA3AF' },
+  wordButtonActive: { transform: [{ scale: 1.1 }], backgroundColor: theme.isDarkMode ? '#5B21B6' : '#FFF5F7' },
+  wordButtonLocked: { backgroundColor: theme.isDarkMode ? '#1E293B' : '#F3F4F6', elevation: 0, shadowOpacity: 0 },
+  wordText: { fontSize: FONTS.heading, fontWeight: FONTS.bold, color: theme.text },
+  wordTextActive: { color: theme.primaryDark },
+  wordTextLocked: { color: theme.isDarkMode ? '#475569' : '#9CA3AF' },
 });
