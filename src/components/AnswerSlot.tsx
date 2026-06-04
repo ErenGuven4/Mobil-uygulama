@@ -1,6 +1,4 @@
-// ============================================
-// components/AnswerSlot.tsx — Cevap Yuvası
-// ============================================
+// Hecelerin yerleştiği kutuların (yuvaların) tasarımını ve animasyonunu yaptığım bileşen.
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
@@ -31,6 +29,7 @@ export default function AnswerSlot({
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
+  // Kutuya hece yerleştiğinde hafifçe zıplamasını (bounce) sağladım.
   useEffect(() => {
     if (syllable) {
       bounceAnim.setValue(0);
@@ -43,6 +42,7 @@ export default function AnswerSlot({
     }
   }, [syllable]);
 
+  // Yanlış cevap verildiğinde kutuların sallanma (shake) animasyonunu tetikledim.
   useEffect(() => {
     if (status === 'wrong') {
       Animated.sequence([

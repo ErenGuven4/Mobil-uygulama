@@ -1,6 +1,4 @@
-// ============================================
-// components/ProgressBar.tsx — İlerleme Çubuğu
-// ============================================
+// Oyun içinde kaçıncı kelimede olduğumuzu gösteren ilerleme çubuğu (progress bar) bileşeni.
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { FONTS, RADIUS, SPACING } from '../constants/theme';
@@ -16,6 +14,7 @@ export default function ProgressBar({ current, total }: ProgressBarProps) {
   const styles = getStyles(theme);
   const widthAnim = useRef(new Animated.Value(0)).current;
 
+  // Mevcut heceleme durumuna göre ilerleme yüzdesini hesaplayıp genişliği animasyonlu olarak artırdım.
   useEffect(() => {
     const percentage = total > 0 ? (current / total) * 100 : 0;
     Animated.timing(widthAnim, {

@@ -1,6 +1,4 @@
-// ============================================
-// components/FeedbackModal.tsx — Geri Bildirim
-// ============================================
+// Heceleme bittikten sonra doğru veya yanlış bildirim penceresini (pop-up) açtığım modal bileşeni.
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity, Modal,
@@ -22,6 +20,7 @@ export default function FeedbackModal({
   const styles = getStyles(theme);
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
+  // Modal ekranda göründüğünde yaylanarak (spring) büyümesi için animasyon ekledim.
   useEffect(() => {
     if (visible) {
       scaleAnim.setValue(0);

@@ -1,6 +1,4 @@
-// ============================================
-// components/SyllableButton.tsx — Hece Butonu
-// ============================================
+// Harfleri birleştirirken tıkladığımız hece butonunun tasarımını ve animasyonunu yaptığım bileşen.
 import React, { useRef } from 'react';
 import {
   TouchableOpacity,
@@ -29,6 +27,7 @@ export default function SyllableButton({
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Butona basıldığında küçülme efekti verdim.
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.9,
@@ -38,6 +37,7 @@ export default function SyllableButton({
     }).start();
   };
 
+  // Parmak butondan çekildiğinde tekrar eski boyutuna gelmesini sağladım.
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,

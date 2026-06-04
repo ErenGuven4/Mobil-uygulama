@@ -1,6 +1,4 @@
-// ============================================
-// components/LevelNode.tsx — Seviye Düğümü
-// ============================================
+// Haritadaki her bir seviye düğümünün (dairelerin) animasyonunu ve durumlarını tasarladığım bileşen.
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
@@ -31,6 +29,7 @@ export default function LevelNode({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
+  // Seviyeler ekranda belirirken sırayla yukarı kayarak açılsın diye delaylı animasyon yaptım.
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -47,6 +46,7 @@ export default function LevelNode({
       }),
     ]).start();
 
+    // Eğer bu seviye aktif (mevcut) seviyeyse, oyuncunun dikkatini çekmesi için büyüyüp küçülme (nabız) animasyonu verdim.
     if (status === 'current') {
       const pulse = Animated.loop(
         Animated.sequence([

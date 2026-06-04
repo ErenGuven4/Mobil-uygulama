@@ -1,6 +1,4 @@
-// ============================================
-// components/ConfettiEffect.tsx — Konfeti Efekti
-// ============================================
+// Kelime doğru hecelendiğinde ekrandan aşağı dökülen konfeti animasyonunu tasarladığım bileşen.
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
@@ -17,6 +15,7 @@ interface Props {
 }
 
 export default function ConfettiEffect({ visible, onComplete }: Props) {
+  // Ekrana rastgele saçılacak 25 adet konfeti parçasının ilk ayarlarını yaptım.
   const anims = useRef(
     Array.from({ length: 25 }, (_, i) => ({
       id: i,
@@ -29,6 +28,7 @@ export default function ConfettiEffect({ visible, onComplete }: Props) {
     }))
   ).current;
 
+  // Konfetiler görünür olduğunda aşağı düşme, dönme ve küçülme animasyonlarını başlattım.
   useEffect(() => {
     if (!visible) return;
     const animations = anims.map((p, i) => {
