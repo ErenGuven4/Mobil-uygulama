@@ -15,21 +15,28 @@ export default function SplashScreen({ navigation }: Props) {
   const { theme, isDarkMode } = useTheme();
   const styles = getStyles(theme);
 
+  // Animasyon Değişkenleri (useRef ile bileşen her render olduğunda sıfırlanması önlenir):
+  // logoScale: Logunun sıfırdan orijinal boyutuna (1) büyümesini sağlar.
   const logoScale = useRef(new Animated.Value(0)).current;
+  // titleOpacity: Başlık metinlerinin opaklığını (opacity) 0'dan 1'e getirir.
   const titleOpacity = useRef(new Animated.Value(0)).current;
+  // titleSlide: Başlık metnini aşağıdan yukarı kaydırmak için başlangıçta 30px aşağıda tutar.
   const titleSlide = useRef(new Animated.Value(30)).current;
+  // btnOpacity: Başla butonunun görünürlüğünü yavaşça açar (0'dan 1'e).
   const btnOpacity = useRef(new Animated.Value(0)).current;
+  // btnBounce: Butonun sürekli yukarı-aşağı zıplama efekti için dikey konumu (translateY).
   const btnBounce = useRef(new Animated.Value(0)).current;
+  // bgAnim: Arka plan renk geçişi (gradient geçişi) için kullanılan 0 ile 1 arasındaki değer.
   const bgAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Giriş animasyonlarını sırayla tetikledim.
+    // Giriş animasyonlarını sırayla tetikledim (Animated.sequence).
     Animated.sequence([
-      // Logo yaylanarak büyüsün diye spring kullandım.
+      // 1. Adım: Logo yaylanarak (spring) büyür.
       Animated.spring(logoScale, {
         toValue: 1, useNativeDriver: true, speed: 4, bounciness: 14,
       }),
-      // Başlık yazılarını görünür yaptım.
+      // 2. Adım: Başlık yazıları görünür olurken (parallel) aynı anda yukarı doğru kayar.
       Animated.parallel([
         Animated.timing(titleOpacity, {
           toValue: 1, duration: 600, useNativeDriver: true,
@@ -38,17 +45,19 @@ export default function SplashScreen({ navigation }: Props) {
           toValue: 0, duration: 600, useNativeDriver: true,
         }),
       ]),
-      // Başlama butonunu görünür hale getirdim.
+      // 3. Adım: Başlama butonu yavaşça belirir.
       Animated.timing(btnOpacity, {
         toValue: 1, duration: 400, useNativeDriver: true,
       }),
     ]).start(() => {
-      // Butonun sürekli yukarı aşağı zıplaması için sonsuz döngü oluşturdum.
+      // Giriş animasyonları bittikten sonra butona sürekli zıplama hareketi (loop) veriyoruz.
       Animated.loop(
         Animated.sequence([
+          // Butonu 600ms içinde 8px yukarı kaydır
           Animated.timing(btnBounce, {
             toValue: -8, duration: 600, useNativeDriver: true,
           }),
+          // Butonu 600ms içinde eski yerine (0) getir
           Animated.timing(btnBounce, {
             toValue: 0, duration: 600, useNativeDriver: true,
           }),
@@ -56,11 +65,11 @@ export default function SplashScreen({ navigation }: Props) {
       ).start();
     });
 
-    // Arka plandaki renklerin yumuşak geçiş yapmasını sağladım.
+    // Arka plan renginin sürekli olarak iki renk arasında yumuşak geçiş yapmasını (loop) sağladık.
     Animated.loop(
       Animated.sequence([
         Animated.timing(bgAnim, {
-          toValue: 1, duration: 3000, useNativeDriver: false,
+          toValue: 1, duration: 3000, useNativeDriver: false, // Renk interpolasyonu için useNativeDriver: false olmalıdır
         }),
         Animated.timing(bgAnim, {
           toValue: 0, duration: 3000, useNativeDriver: false,
@@ -69,6 +78,7 @@ export default function SplashScreen({ navigation }: Props) {
     ).start();
   }, []);
 
+  // bgAnim değeri (0 ila 1) değiştikçe arka planın rengini başlangıç rengi ile bitiş rengi arasında dönüştürürüz (interpolate).
   const bgColor = bgAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [theme.backgroundGradientStart, theme.backgroundGradientEnd],
@@ -88,7 +98,7 @@ export default function SplashScreen({ navigation }: Props) {
         <Text style={[styles.bgEmoji, { top: '55%', right: '5%' }]}>🦋</Text>
       </View>
 
-      {/* Uygulamanın logosu ve arkasındaki çember */}
+      {/* Uygulamanın logosu ve arkasındaki parlayan dairesel arka plan */}
       <Animated.View style={[
         styles.logoContainer,
         { transform: [{ scale: logoScale }] },
@@ -110,7 +120,7 @@ export default function SplashScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Harfler birleşsin, kelimeler doğsun! ✨</Text>
       </Animated.View>
 
-      {/* Oyunu başlatan buton */}
+      {/* Oyunu başlatan buton (Kullanıcıyı NameEntry ekranına yönlendirir) */}
       <Animated.View style={{
         opacity: btnOpacity,
         transform: [{ translateY: btnBounce }],
@@ -118,6 +128,7 @@ export default function SplashScreen({ navigation }: Props) {
         <TouchableOpacity
           style={styles.startButton}
           activeOpacity={0.8}
+          // replace: Geri butonuna basınca Splash ekranına dönmesin diye stack'ten tamamen kaldırır
           onPress={() => navigation.replace('NameEntry')}
         >
           <Text style={styles.startButtonText}>🚀 Başla!</Text>
@@ -145,7 +156,7 @@ const getStyles = (theme: any) => StyleSheet.create({
   bgEmoji: {
     position: 'absolute',
     fontSize: 30,
-    opacity: 0.15,
+    opacity: 0.15, // Emojileri yarı saydam yaparak arka planda boğulmamasını sağlıyoruz
   },
   logoContainer: {
     marginBottom: SPACING.xl,
@@ -171,7 +182,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     color: theme.primary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
-    textShadowColor: 'rgba(124, 58, 237, 0.2)',
+    textShadowColor: 'rgba(124, 58, 237, 0.2)', // Başlığa hafif gölge derinliği
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },

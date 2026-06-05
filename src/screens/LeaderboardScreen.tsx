@@ -4,21 +4,29 @@ import {
   View, Text, StyleSheet, ScrollView, StatusBar,
   ActivityIndicator, RefreshControl
 } from 'react-native';
+// useFocusEffect: Ekran her görüntülendiğinde güncel verileri çekmek için kullanılan navigasyon hook'u.
 import { useFocusEffect } from '@react-navigation/native';
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
+// getLeaderboard: Backend'den skora göre sıralı tüm kullanıcı listesini çeken API.
 import { getLeaderboard, LeaderboardEntry } from '../api/api';
+// useTheme: Tema renklerini (açık/koyu mod) almak için kullanılan context hook'u.
 import { useTheme } from '../context/ThemeContext';
 
 export default function LeaderboardScreen({ route }: any) {
+  // route.params üzerinden gelen aktif kullanıcı ID'si (sen olduğunu belirtmek için).
   const { userId } = route.params || { userId: 'default' };
   const { theme, isDarkMode } = useTheme();
   const styles = getStyles(theme);
 
+  // State tanımlamaları:
+  // leaderboard: Sunucudan çekilen sıralı kullanıcı dizisi.
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  // loading: İlk açılışta yüklenme çemberini gösterir.
   const [loading, setLoading] = useState(true);
+  // refreshing: Aşağı çekip yenileme (Pull to Refresh) animasyonunu kontrol eder.
   const [refreshing, setRefreshing] = useState(false);
 
-  // Sunucudan liderlik sıralamasını alan fonksiyonu yazdım.
+  // Sunucudan liderlik sıralamasını alan asenkron fonksiyon.
   const loadData = async () => {
     try {
       const data = await getLeaderboard();
@@ -26,22 +34,26 @@ export default function LeaderboardScreen({ route }: any) {
     } catch (err) {
       console.log('Skor tablosu yüklenirken hata:', err);
     } finally {
+      // Her halükarda yükleniyor durumlarını kapatıyoruz.
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // useFocusEffect: Kullanıcı bu ekranı her açtığında sıralamayı günceller.
   useFocusEffect(
     useCallback(() => {
       loadData();
     }, [userId])
   );
 
+  // Kullanıcı ekranı aşağı kaydırdığında (pull-to-refresh) tetiklenen yenileme fonksiyonu.
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
+  // İlk yüklemede dönen yükleniyor simgesi.
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -50,27 +62,31 @@ export default function LeaderboardScreen({ route }: any) {
     );
   }
 
-  // İlk 3 kişiyi podyuma yerleştirmek için ayırdım.
+  // İlk 3 kişiyi podyumda (kürsüde) göstermek için diziden ayırıyoruz.
   const podium = leaderboard.slice(0, 3);
+  // Geriye kalan oyuncuları ise normal liste şeklinde aşağıda göstereceğiz.
   const others = leaderboard.slice(3);
 
-  // Oyuncunun sırasına göre kupa veya madalya emojisi aldığım fonksiyon.
+  // Oyuncunun sırasına göre kupa veya madalya emojisi döndüren yardımcı fonksiyon.
   const getRankEmoji = (rank: number) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
-    return `#${rank}`;
+    return `#${rank}`; // İlk 3 dışındakilere "#4", "#5" gibi sıra no yazılır.
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      
+      {/* Üst Başlık */}
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>📊 Skor Tablosu</Text>
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Kaydırılabilir İçerik Alanı ve Yenileme Kontrolü (RefreshControl) */}
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -82,10 +98,10 @@ export default function LeaderboardScreen({ route }: any) {
           En çok kelime heceleyen süper oyuncular burada! Aşağı kaydırarak yenileyebilirsin. 🐼
         </Text>
 
-        {/* Dereceye giren ilk 3 oyuncuyu gösterdiğim podyum alanı */}
+        {/* PODYUM ALANI (Dereceye giren ilk 3 oyuncu görsel kürsüde gösterilir) */}
         {podium.length > 0 && (
           <View style={styles.podiumContainer}>
-            {/* 2. Sıra */}
+            {/* 2. Sıra (Soldaki kürsü) */}
             {podium[1] && (
               <View style={[styles.podiumCol, styles.podiumCol2]}>
                 <Text style={styles.podiumRank}>🥈</Text>
@@ -97,7 +113,7 @@ export default function LeaderboardScreen({ route }: any) {
               </View>
             )}
 
-            {/* 1. Sıra (Ortada ve daha büyük) */}
+            {/* 1. Sıra (Ortadaki kürsü - daha büyük ve yukarıda hizalanmış) */}
             {podium[0] && (
               <View style={[styles.podiumCol, styles.podiumCol1]}>
                 <Text style={styles.podiumRankMain}>🥇</Text>
@@ -109,7 +125,7 @@ export default function LeaderboardScreen({ route }: any) {
               </View>
             )}
 
-            {/* 3. Sıra */}
+            {/* 3. Sıra (Sağdaki kürsü) */}
             {podium[2] && (
               <View style={[styles.podiumCol, styles.podiumCol3]}>
                 <Text style={styles.podiumRank}>🥉</Text>
@@ -125,16 +141,16 @@ export default function LeaderboardScreen({ route }: any) {
 
         <Text style={styles.sectionTitle}>TÜM SIRALAMA</Text>
 
-        {/* Tüm oyuncuları alt alta listelediğim yer */}
+        {/* LİSTE ALANI (Tüm oyuncular alt alta sıralanır) */}
         <View style={styles.listCard}>
           {leaderboard.length === 0 ? (
             <Text style={styles.noDataText}>Henüz skor kaydı bulunmuyor.</Text>
           ) : (
             leaderboard.map((item, index) => {
-              const rank = index + 1;
-              const isCurrentUser = item.userId === userId;
+              const rank = index + 1; // Sıralama index'i (1 tabanlı yapılıyor)
+              const isCurrentUser = item.userId === userId; // Çizilen satır aktif oyuncuya mı ait?
 
-              // Dereceye giren ilk 3 kişinin ismi renkli ve parıltılı olsun diye ayarladım.
+              // İlk 3 dereceye özel renk parıltısı veya aktif kullanıcıya özel stil ataması
               let nameStyle: any = styles.userNameText;
               if (rank === 1) nameStyle = styles.userNameGlow1;
               else if (rank === 2) nameStyle = styles.userNameGlow2;
@@ -146,14 +162,16 @@ export default function LeaderboardScreen({ route }: any) {
                   key={item.userId}
                   style={[
                     styles.rankRow,
-                    isCurrentUser && styles.currentUserRow,
-                    index === leaderboard.length - 1 && { borderBottomWidth: 0 }
+                    isCurrentUser && styles.currentUserRow, // Giriş yapmış kullanıcıyı mor renkle vurgula
+                    index === leaderboard.length - 1 && { borderBottomWidth: 0 } // Son satırın alt çizgisini kaldır
                   ]}
                 >
+                  {/* Sıralama Emoji veya Numarası */}
                   <Text style={[styles.rankNumber, rank <= 3 && styles.topRankNumber]}>
                     {getRankEmoji(rank)}
                   </Text>
                   
+                  {/* Oyuncu Bilgileri */}
                   <View style={styles.userInfo}>
                     <Text style={nameStyle}>
                       {item.userId} {isCurrentUser && ' (Sen) 🐼'}
@@ -163,6 +181,7 @@ export default function LeaderboardScreen({ route }: any) {
                     </Text>
                   </View>
 
+                  {/* Oyuncu Skoru */}
                   <Text style={[styles.userScoreText, isCurrentUser && styles.currentUserText]}>
                     {item.score} ⭐
                   </Text>

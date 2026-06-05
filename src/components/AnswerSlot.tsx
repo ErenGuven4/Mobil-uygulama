@@ -1,4 +1,6 @@
-// Hecelerin yerleştiği kutuların (yuvaların) tasarımını ve animasyonunu yaptığım bileşen.
+// Heceler yerleştirildiğinde ziplayan, yanlış cevapta sallanan, doğru/yanlış
+// durumuna göre renk değiştiren cevap yuvası bileşeni.
+
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
@@ -10,22 +12,25 @@ import {
 import { FONTS, RADIUS, SPACING } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 
+// Bu bileşenin dışardan aldığı prop'lar (parametreler):
 interface AnswerSlotProps {
-  syllable?: string;
-  index: number;
-  onPress: () => void;
-  status?: 'neutral' | 'correct' | 'wrong';
+  syllable?: string;                           // Yuvasında yazacak hece (undefined ise boş)
+  index: number;                               // Kaçıncı yuva olduğu (sıra numarası için)
+  onPress: () => void;                         // Yuvaya basıldığında çalışan fonksiyon
+  status?: 'neutral' | 'correct' | 'wrong';   // Yuvanın durumu (varsayılan: 'neutral')
 }
 
 export default function AnswerSlot({
   syllable,
   index,
   onPress,
-  status = 'neutral',
+  status = 'neutral', // Status belirtilmezse 'neutral' kabul edilir
 }: AnswerSlotProps) {
   const { theme } = useTheme();
-  const styles = getStyles(theme);
+  const styles = getStyles(theme); // Tema değerlerine göre stil nesnesi oluşturuluyor
 
+  // bounceAnim: hece yerleşince çözer gibi sıçrama (bounce) efekti için
+  // shakeAnim: yanlış cevapta sallantı (shake) efekti için
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -43,6 +48,7 @@ export default function AnswerSlot({
   }, [syllable]);
 
   // Yanlış cevap verildiğinde kutuların sallanma (shake) animasyonunu tetikledim.
+  // Animated.sequence → animasyonlar sırayla çalışır: sağa → sola → sağa → sola → sıfır
   useEffect(() => {
     if (status === 'wrong') {
       Animated.sequence([
@@ -55,11 +61,13 @@ export default function AnswerSlot({
     }
   }, [status]);
 
+  // bounceAnim 0→1'e giderken boyutun 0.5'ten 1'e çıkmasını sağlıyoruz (küçükten büyüye açılır).
   const scale = bounceAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.5, 1],
   });
 
+  // Yuvanın durumuna göre arka plan ve kenar rengini belirleyen fonksiyon.
   const getStatusStyle = () => {
     switch (status) {
       case 'correct':

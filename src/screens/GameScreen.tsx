@@ -1,4 +1,5 @@
 // Kelimeleri heceleyip oyunu oynadığımız ana oyun ekranı.
+// Oyun akışı: Kelime yüklenir → Heceler karıştirilir → Oyuncu hecelere basar → Cevap kontrol edilir.
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity,
@@ -15,6 +16,7 @@ import { playCorrectSound, playWrongSound, playTapSound, playLevelCompleteSound,
 import { getWordsByLevel, updateProgress, Word } from '../api/api';
 import { useTheme } from '../context/ThemeContext';
 
+// navigation: Ekranlar arası geçiş için, route: Bu ekrana gelen parametreler için
 interface Props {
   navigation: any;
   route: any;
@@ -30,26 +32,29 @@ const fallbackWords: Word[] = [
 ];
 
 export default function GameScreen({ navigation, route }: Props) {
+  // levelId: Hangi bölüm oynanıyor, userId: Oturumu açan oyuncu adı
   const { levelId, userId = 'default' } = route.params;
   const { theme, isDarkMode } = useTheme();
   const styles = getStyles(theme);
 
-  const [words, setWords] = useState<Word[]>([]);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [shuffledSyllables, setShuffledSyllables] = useState<string[]>([]);
-  const [selectedSyllables, setSelectedSyllables] = useState<(string | undefined)[]>([]);
-  const [usedIndices, setUsedIndices] = useState<Set<number>>(new Set());
-  const [slotStatus, setSlotStatus] = useState<'neutral' | 'correct' | 'wrong'>('neutral');
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<'correct' | 'wrong'>('correct');
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [levelComplete, setLevelComplete] = useState(false);
+  // ─ Oyun durumu state'leri ─
+  const [words, setWords] = useState<Word[]>([]);                           // Yüklenen kelime listesi
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);              // Kaçıncı kelimede olduğumuz
+  const [shuffledSyllables, setShuffledSyllables] = useState<string[]>([]);  // Karıştırılmış hece seçenekleri
+  const [selectedSyllables, setSelectedSyllables] = useState<(string | undefined)[]>([]); // Oyuncunun seçtiği heceler
+  const [usedIndices, setUsedIndices] = useState<Set<number>>(new Set());   // Kullanılmış hece buton indexleri
+  const [slotStatus, setSlotStatus] = useState<'neutral' | 'correct' | 'wrong'>('neutral'); // Yuva durumu
+  const [showFeedback, setShowFeedback] = useState(false);                 // Geri bildirim modalı açık mı?
+  const [feedbackType, setFeedbackType] = useState<'correct' | 'wrong'>('correct'); // Modal tipi
+  const [showConfetti, setShowConfetti] = useState(false);                 // Konfeti görünsün mü?
+  const [loading, setLoading] = useState(true);                            // Kelimeler yüklüyor mu?
+  const [levelComplete, setLevelComplete] = useState(false);               // Bölüm bitti mi?
 
+  // Emoji ve kart için ayrı ayrı giriş animasyonları
   const emojiScale = useRef(new Animated.Value(0)).current;
   const cardAnim = useRef(new Animated.Value(0)).current;
 
-  const currentWord = words[currentWordIndex];
+  const currentWord = words[currentWordIndex]; // O anda oynanan kelime
 
   useEffect(() => {
     loadWords();
@@ -59,9 +64,10 @@ export default function GameScreen({ navigation, route }: Props) {
     setLoading(true);
     try {
       const data = await getWordsByLevel(levelId);
+      // Sunucudan boş gelirse yedek kelimeler kullanılır
       const wordList = data.length > 0 ? data : fallbackWords;
       setWords(wordList);
-      setupWord(wordList[0]);
+      setupWord(wordList[0]); // İlk kelimeyi hazırla
     } catch (error) {
       console.error('Kelimeler yüklenemedi:', error);
       setWords(fallbackWords);
@@ -71,14 +77,16 @@ export default function GameScreen({ navigation, route }: Props) {
   }
 
   // Yeni kelimeyi hazırlayan ve hecelerini karıştıran fonksiyonu yazdım.
+  // new Array(n).fill(undefined) → n adet boş yuva oluşturur.
   function setupWord(word: Word) {
     if (!word) return;
-    const shuffled = shuffle(word.syllables);
+    const shuffled = shuffle(word.syllables); // Heceleri rastgele sıraya koy
     setShuffledSyllables(shuffled);
-    setSelectedSyllables(new Array(word.syllables.length).fill(undefined));
-    setUsedIndices(new Set());
+    setSelectedSyllables(new Array(word.syllables.length).fill(undefined)); // Boş yuvalar
+    setUsedIndices(new Set()); // Hiçbir hece kullanılmadı
     setSlotStatus('neutral');
 
+    // Emoji büyüyerek açılsın, kart aşağıdan kayarak gelsin
     emojiScale.setValue(0);
     cardAnim.setValue(0);
     Animated.parallel([
@@ -92,38 +100,42 @@ export default function GameScreen({ navigation, route }: Props) {
   }
 
   // Bir heceye basıldığında onu boş kutuya yerleştiren fonksiyonu yazdım.
+  // findIndex: undefined olan ilk yuvayı bulur.
+  // allFilled: Tüm yuvalar doldu mu? Dolduysa cevabı kontrol et.
   function handleSyllablePress(syllable: string, index: number) {
     playTapSound();
     speakSyllable(syllable);
 
     const emptySlotIndex = selectedSyllables.findIndex((s) => s === undefined);
-    if (emptySlotIndex === -1) return;
+    if (emptySlotIndex === -1) return; // Tüm yuvalar doluysa bir şey yapma
 
     const newSelected = [...selectedSyllables];
     newSelected[emptySlotIndex] = syllable;
     setSelectedSyllables(newSelected);
 
     const newUsed = new Set(usedIndices);
-    newUsed.add(index);
+    newUsed.add(index); // Bu heceyi kullanıldı olarak işaretle
     setUsedIndices(newUsed);
 
     const allFilled = newSelected.every((s) => s !== undefined);
     if (allFilled) {
-      checkAnswer(newSelected as string[]);
+      checkAnswer(newSelected as string[]); // Tüm yuvalar doldu → cevabı kontrol et
     }
   }
 
   // Seçilen bir heceyi geri almak için kutuya tıklandığında çalışan fonksiyonu yazdım.
+  // Yuvadaki heceyi siler ve o heceye ait buton indexini usedIndices'ten kaldırır.
   function handleSlotPress(slotIndex: number) {
     const syllable = selectedSyllables[slotIndex];
-    if (!syllable) return;
+    if (!syllable) return; // Boş yuvaya basıldıysa hiçbir şey yapma
 
     playTapSound();
 
     const newSelected = [...selectedSyllables];
-    newSelected[slotIndex] = undefined;
+    newSelected[slotIndex] = undefined; // Yuvayı temizle
     setSelectedSyllables(newSelected);
 
+    // Kullanılan hece butonunu serbest bırak (aynı hece birden fazla kez olabilir, ilkini kaldır)
     const originalIndex = shuffledSyllables.findIndex(
       (s, i) => s === syllable && usedIndices.has(i)
     );
@@ -133,32 +145,38 @@ export default function GameScreen({ navigation, route }: Props) {
       setUsedIndices(newUsed);
     }
 
-    setSlotStatus('neutral');
+    setSlotStatus('neutral'); // Durumu sıfırla
   }
 
   // Heceler tamamlandığında cevabın doğruluğunu kontrol ettiğim fonksiyon.
+  // join('') ile hece dizilerini birleştirip karşılaştırıyoruz. Örn: ["El","ma"] → "Elma"
   async function checkAnswer(answer: string[]) {
     if (!currentWord) return;
 
+    // Oyuncunun dizisi ile doğru dizi aynı mı? (hece sırası da önemli)
     const isCorrect = answer.join('') === currentWord.syllables.join('');
 
     if (isCorrect) {
-      setSlotStatus('correct');
+      setSlotStatus('correct');     // Yuvaları yeşile boya
       setFeedbackType('correct');
-      setShowConfetti(true);
-      setShowFeedback(true);
+      setShowConfetti(true);        // Konfeti yağdur
+      setShowFeedback(true);        // Tebrik modalını aç
       playCorrectSound();
 
-      await updateProgress(currentWord.id, true, undefined, userId);
+      await updateProgress(currentWord.id, true, undefined, userId); // Sunucuya kaydet
     } else {
-      setSlotStatus('wrong');
+      setSlotStatus('wrong');       // Yuvaları kırmızıya boya
       setFeedbackType('wrong');
       setShowFeedback(true);
       playWrongSound();
+
+      await updateProgress(currentWord.id, false, undefined, userId); // Yanlış cevabı backend'e kaydet
     }
   }
 
   // Doğru/yanlış bildirim ekranı kapandığında sonraki kelimeye geçen fonksiyonu yazdım.
+  // Doğruysa: Sonraki kelimeye geç ya da bölümü tamamla.
+  // Yanlışsa: Aynı kelimeyi sıfırla, tekrar dene.
   function handleFeedbackClose() {
     setShowFeedback(false);
     setShowConfetti(false);
@@ -169,22 +187,24 @@ export default function GameScreen({ navigation, route }: Props) {
         setCurrentWordIndex(nextIndex);
         setupWord(words[nextIndex]);
       } else {
-        handleLevelComplete();
+        handleLevelComplete(); // Tüm kelimeler bitti → bölüm tamamlandı
       }
     } else {
       if (currentWord) {
-        setupWord(currentWord);
+        setupWord(currentWord); // Aynı kelimeyi yeniden başlat
       }
     }
   }
 
   // Bölümdeki tüm kelimeler bitince seviyeyi tamamlayan fonksiyonu yazdım.
+  // wordId boş string ('' → bireysel kelime değil), correct:false, levelId verilir.
   async function handleLevelComplete() {
     setLevelComplete(true);
     playLevelCompleteSound();
-    await updateProgress('', false, levelId, userId);
+    await updateProgress('', false, levelId, userId); // Bölümü sunucuda tamamladı olarak işaretle
   }
 
+  // Ekran kapanınca sesli okumayı durduruyoruz (cleanup fonksiyonu).
   useEffect(() => {
     return () => { stopSpeaking(); };
   }, []);
