@@ -1,4 +1,5 @@
-// Harfleri birleştirirken tıkladığımız hece butonunun tasarımını ve animasyonunu yaptığım bileşen.
+// Oyuncunun secs'eği hece butonunun (basınca küçülme, bırakınca büyüme animasyonu).
+// selected: Oyuncunun bu heceyi seçip seçmediği; disabled: kullanılmış veya devre dışı.
 import React, { useRef } from 'react';
 import {
   TouchableOpacity,
@@ -9,11 +10,12 @@ import {
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 
+// Bu bileşenin dışardan aldığı prop'lar:
 interface SyllableButtonProps {
-  syllable: string;
-  onPress: () => void;
-  disabled?: boolean;
-  selected?: boolean;
+  syllable: string;      // Buton üzerinde yazacak hece ("El", "ma" gibi)
+  onPress: () => void;   // Butona basınca çalışacak fonksiyon
+  disabled?: boolean;    // true ise buton kilitli (hece zaten kullanılmış)
+  selected?: boolean;    // true ise buton seçili görünümünde
 }
 
 export default function SyllableButton({

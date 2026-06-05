@@ -1,4 +1,5 @@
 // Oyuncunun kazandığı başarıları ve kilitli olan rozetleri gösterdiğim ekran.
+// Başarı koşulları score, levelsCompleted ve wordsCompleted değerlerine göre hesaplanır.
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, StatusBar, ActivityIndicator } from 'react-native';
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
@@ -17,6 +18,7 @@ export default function AchievementsScreen({ navigation, route }: any) {
     loadProgress();
   }, []);
 
+  // Sunucudan ilerleme verisini çek; hata olursa loading=false yap ama uygulama çökmesin.
   async function loadProgress() {
     try {
       const data = await getProgress(userId);
@@ -24,14 +26,17 @@ export default function AchievementsScreen({ navigation, route }: any) {
     } catch (err) {
       console.log('Başarılar yüklenirken hata:', err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Başarılı ya da başarısız her durumda yüklenmeyi bitir
     }
   }
 
+  // Veri gelmemişse varsayılan değerler (0).
   const score = progress?.score || 0;
   const levelsCompleted = progress?.completedLevels.length || 0;
   const wordsCompleted = progress?.completedWords.length || 0;
 
+  // Her başarı nesnesi: rozet adı, açıklaması, ikonu ve açılıp açılmadığını taşır.
+  // unlocked: koşul sağlandıysa true (rozet görünür), sağlanmadıysa false (kilitli).
   const achievements = [
     {
       id: 1,

@@ -1,4 +1,5 @@
 // Haritadaki her bir seviye düğümünün (dairelerin) animasyonunu ve durumlarını tasarladığım bileşen.
+// completed: Tamamlanmış (yeşil), current: Aktif (mor+titreyen), locked: Kilitli (gri).
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
@@ -9,11 +10,12 @@ import {
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 
+// Bu bileşenin dışardan aldığı prop'lar:
 interface LevelNodeProps {
-  levelId: number;
-  name: string;
-  status: 'completed' | 'current' | 'locked';
-  onPress: () => void;
+  levelId: number;                                     // Bölüm numarası (ekranda görünür)
+  name: string;                                        // Bölüm adı (düğümün altında)
+  status: 'completed' | 'current' | 'locked';         // Bölümün durumu
+  onPress: () => void;                                 // Basınca çalışacak fonksiyon
 }
 
 export default function LevelNode({
@@ -25,11 +27,15 @@ export default function LevelNode({
   const { theme } = useTheme();
   const styles = getStyles(theme);
 
+  // pulseAnim: aktif seviyenin nabzı gibi büyüyüp küçülmesi için (sürekli döngü)
+  // fadeAnim: düğüm ekrana belirirken saydamsızlık (0→1)
+  // slideAnim: düğüm aşağıdan yukarıya kayarak açılır (30→0 piksel)
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
-  // Seviyeler ekranda belirirken sırayla yukarı kayarak açılsın diye delaylı animasyon yaptım.
+  // Bileşen ekranda göründüğünde hem fade+slide başlatılır, hem aktifse pulse tetiklenir.
+  // levelId * 150ms delay → düğümler sırayla açılır (1. bölüm önce, 5. bölüm en son).
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -46,7 +52,8 @@ export default function LevelNode({
       }),
     ]).start();
 
-    // Eğer bu seviye aktif (mevcut) seviyeyse, oyuncunun dikkatini çekmesi için büyüyüp küçülme (nabız) animasyonu verdim.
+    // Aktif seviye için: 1→1.1→1 arası sürekli döngü → nabzı simgeler.
+    // return () => pulse.stop() → bileşen silinince animasyon durdurulur.
     if (status === 'current') {
       const pulse = Animated.loop(
         Animated.sequence([
@@ -67,6 +74,7 @@ export default function LevelNode({
     }
   }, [status]);
 
+  // Duruma göre düğümün içindeki emoji örneği: tamamlanan→✅, aktif→⭐, kilitli→🔒
   const getStatusEmoji = () => {
     switch (status) {
       case 'completed':
@@ -78,6 +86,7 @@ export default function LevelNode({
     }
   };
 
+  // Duruma göre düğüm arka plan rengi: tamamlanan→yeşil, aktif→mor, kilitli→gri
   const getNodeColor = () => {
     switch (status) {
       case 'completed':

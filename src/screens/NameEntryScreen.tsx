@@ -1,4 +1,5 @@
 // Oyuncunun ismini girdiği ve önceki profillerini listelediğim giriş ekranı.
+// savedProfiles: Cihaz belleğinde tutulan son 5 profil adı listesi (oturum kapansa bile kalır).
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Animated, TextInput,
@@ -6,30 +7,32 @@ import {
   Platform, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
-import { getProgress } from '../api/api';
+import { login, register, getProgress } from '../api/api';
 import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   navigation: any;
 }
 
+// savedProfiles: Modül seviyesinde tutuluyor → ekran yeniden render olsa bile liste sıfırlanmaz.
 let savedProfiles: string[] = [];
 
 export default function NameEntryScreen({ navigation }: Props) {
   const { theme, isDarkMode } = useTheme();
   const styles = getStyles(theme);
 
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [profiles, setProfiles] = useState<string[]>(savedProfiles);
+  const [name, setName] = useState('');           // Metin kutusundaki isim
+  const [loading, setLoading] = useState(false);  // Sunucuya bağlanıyor mu?
+  const [error, setError] = useState('');         // Hata mesajı
+  const [profiles, setProfiles] = useState<string[]>(savedProfiles); // Kaydedilmiş profil listesi
 
   // Kart ve yazı animasyonlarını tanımladım.
-  const titleAnim  = useRef(new Animated.Value(0)).current;
-  const cardAnim   = useRef(new Animated.Value(0)).current;
-  const shakeAnim  = useRef(new Animated.Value(0)).current;
+  const titleAnim  = useRef(new Animated.Value(0)).current; // Başlık yay belirir
+  const cardAnim   = useRef(new Animated.Value(0)).current; // Kart aşağıdan kaydı
+  const shakeAnim  = useRef(new Animated.Value(0)).current; // Hatalı girdi sallanır
 
   useEffect(() => {
+    // stagger(200): titleAnim başlar, 200ms sonra cardAnim başlar (birbirine eklemli)
     Animated.stagger(200, [
       Animated.spring(titleAnim, { toValue: 1, useNativeDriver: true, speed: 5, bounciness: 12 }),
       Animated.timing(cardAnim,  { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -46,13 +49,14 @@ export default function NameEntryScreen({ navigation }: Props) {
     ]).start();
   }
 
-  // İsmi onaylayıp bir sonraki ekrana geçiş yaptığım fonksiyon.
+  // İsmi onaylatıp bir sonraki ekrana geçiş yapılan fonksiyon.
+  // selectedName: Kaydedilmiş profile tıklandıysa o isim verilir; yoksa metin kutusundaki isim alınır.
   async function handleContinue(selectedName?: string) {
-    const trimmedName = (selectedName ?? name).trim();
+    const trimmedName = (selectedName ?? name).trim(); // Baş/sondaki boşlukları temizle
 
     if (trimmedName.length < 2) {
       setError('İsmin en az 2 harf olmalı! 😊');
-      shake();
+      shake(); // Kartı sallat (hata vurgusu)
       return;
     }
     if (trimmedName.length > 20) {
@@ -65,6 +69,21 @@ export default function NameEntryScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
+      // Şifre olarak ismin MD5'i yerine sabit bir türetme kullanıyoruz
+      const password = `hec_${trimmedName.toLowerCase()}_2025`;
+
+      // Önce giriş dene; başarısızsa kayıt ol ve tekrar giriş yap
+      let ok = await login(trimmedName, password);
+      if (!ok) {
+        await register(trimmedName, password);
+        ok = await login(trimmedName, password);
+      }
+
+      if (!ok) {
+        setError('Giriş yapılamadı, tekrar dene.');
+        return;
+      }
+
       await getProgress(trimmedName);
 
       if (!savedProfiles.includes(trimmedName)) {

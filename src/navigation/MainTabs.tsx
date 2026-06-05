@@ -1,4 +1,4 @@
-import React from 'react';
+// Alt sekme çubuğunu (tab bar) oluşturan ve ekranlar arası gezinmeyi yöneten navigasyon bileşeni.
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import LevelSelectScreen from '../screens/LevelSelectScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
@@ -11,19 +11,22 @@ import { Entypo } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
+// MainTabs bileşeni, alt tab bar ile geçiş yapılan ana ekran grubunu oluşturur.
+// route.params'tan gelen userId, diğer ekranlara initialParams ile iletilir.
 export default function MainTabs({ route }: any) {
-  const { userId } = route.params;
-  const { theme } = useTheme();
+  const { userId } = route.params;  // Oturum açan oyuncunun adı
+  const { theme } = useTheme();     // Aktif renk paletini al
 
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
+        headerShown: false,       // Her ekran kendi başlığını kullanıyor, navigator başlığını gizledim.
+        tabBarShowLabel: false,   // Sekme alt yazılarını gizledim, sadece ikon görünsün.
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopWidth: 2,
           borderTopColor: theme.answerSlotBorder,
+          // iOS'ta safe area için ekstra yükseklik ve padding gerekiyor.
           height: Platform.OS === 'ios' ? 85 : 65,
           paddingBottom: Platform.OS === 'ios' ? 25 : 0,
           paddingTop: Platform.OS === 'ios' ? 10 : 0,
@@ -34,8 +37,8 @@ export default function MainTabs({ route }: any) {
           padding: 0,
           margin: 0,
         },
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textLight,
+        tabBarActiveTintColor: theme.primary,   // Aktif sekme ikonu rengi
+        tabBarInactiveTintColor: theme.textLight, // Pasif sekme ikonu rengi
       }}
     >
       <Tab.Screen 

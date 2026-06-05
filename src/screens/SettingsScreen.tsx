@@ -1,4 +1,5 @@
 // Ses ayarlarını, karanlık modu ve çıkış yapma seçeneklerini yönettiğim ekran.
+// Ayarlar Switch bileşeni ile değiştirilir; değişiklikler anlık olarak uygulanır.
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Switch,
@@ -19,8 +20,10 @@ export default function SettingsScreen({ navigation, route }: Props) {
   const styles = getStyles(theme);
   
   // Ses efektinin açık olup olmadığını tuttuğum state.
+  // isSoundEffectsEnabled: audio.ts'deki modül düzeyindeki değişkenden başlangıç değerini alıyoruz.
   const [soundEnabled, setSoundEnabled] = useState(isSoundEffectsEnabled);
 
+  // Switch değişince hem lokal state'i güncelliyoruz hem de audio modülündeki global değişkeni.
   const handleSoundToggle = (val: boolean) => {
     setSoundEnabled(val);
     setSoundEffectsEnabled(val);

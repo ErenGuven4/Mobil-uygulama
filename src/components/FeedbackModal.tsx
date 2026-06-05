@@ -1,4 +1,5 @@
 // Heceleme bittikten sonra doğru veya yanlış bildirim penceresini (pop-up) açtığım modal bileşeni.
+// Doğru cevap 1.5 saniye sonra otomatik kapanır; yanlışta "Tamam" butonu görünür.
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, TouchableOpacity, Modal,
@@ -6,11 +7,12 @@ import {
 import { FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 
+// Bu bileşenin dışardan aldığı prop'lar:
 interface FeedbackModalProps {
-  visible: boolean;
-  type: 'correct' | 'wrong';
-  message?: string;
-  onClose: () => void;
+  visible: boolean;                // Modal görünür mü?
+  type: 'correct' | 'wrong';       // Doğru mu yanlış mı?
+  message?: string;                // Opsiyonel özel mesaj (yoksa varsayılan kullanılır)
+  onClose: () => void;             // Modal kapanınca çağrılır
 }
 
 export default function FeedbackModal({
@@ -18,9 +20,12 @@ export default function FeedbackModal({
 }: FeedbackModalProps) {
   const { theme } = useTheme();
   const styles = getStyles(theme);
+  // scaleAnim: modalin sıfırdan yaylanarak (spring) büyüme animasyonu için
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
-  // Modal ekranda göründüğünde yaylanarak (spring) büyümesi için animasyon ekledim.
+  // Modal göründüğünde yaylanarak (spring) büyüme animasyonu başlatılıyor.
+  // Doğru cevapta 1.5 saniye sonra modal otomatik kapanıyor (setTimeout).
+  // cleanup fonksiyonu: bileşen unmount olursa timer iptal ediliyor (bellek sızıntısı önleniyor).
   useEffect(() => {
     if (visible) {
       scaleAnim.setValue(0);
@@ -32,12 +37,13 @@ export default function FeedbackModal({
       }).start();
 
       if (type === 'correct') {
-        const timer = setTimeout(onClose, 1500);
-        return () => clearTimeout(timer);
+        const timer = setTimeout(onClose, 1500); // 1.5 saniye sonra kapat
+        return () => clearTimeout(timer);         // temizle
       }
     }
   }, [visible, type]);
 
+  // Doğru ise isCorrect=true, yanlış ise false. Bu değere göre renk, emoji ve metin seçilir.
   const isCorrect = type === 'correct';
 
   return (

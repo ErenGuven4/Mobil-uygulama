@@ -1,4 +1,5 @@
 // Oyundaki bölüm listesini (yol haritasını) gösterdiğim seviye seçme ekranı.
+// Her bölüm bir LevelNode bileşeniyle gösterilir; tamamlanmış, aktif veya kilitli olabilir.
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Animated,
@@ -19,10 +20,10 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
   const { theme, isDarkMode } = useTheme();
   const styles = getStyles(theme);
 
-  const [levels, setLevels] = useState<Level[]>([]);
-  const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [loading, setLoading] = useState(true);
-  const headerAnim = useRef(new Animated.Value(0)).current;
+  const [levels, setLevels] = useState<Level[]>([]);           // Sunucudan gelen bölüm listesi
+  const [progress, setProgress] = useState<UserProgress | null>(null); // Kullanıcı ilerleme verisi
+  const [loading, setLoading] = useState(true);                // Veri yüklenirken bekle
+  const headerAnim = useRef(new Animated.Value(0)).current;    // Başlık giriş animasyonu
 
   // Sunucudan veri çekilemezse kullanılacak yedek seviye listesini tanımladım.
   const defaultLevels: Level[] = [
@@ -35,18 +36,23 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     loadData();
+    // Başlık yukarıdan aşağı kayarak belirir
     Animated.timing(headerAnim, {
       toValue: 1, duration: 800, useNativeDriver: true,
     }).start();
   }, []);
 
+  // Ekran odaklandığında (oyun bitip geri gelince) veriyi yenile.
+  // addListener('focus') → tab değişikliğinde veya geri tuşundaki tetiklenme.
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadData();
     });
-    return unsubscribe;
+    return unsubscribe; // Bellek sızıntısını önlemek için dinleyiciyi kaldır
   }, [navigation]);
 
+  // Bölüm ve ilerleme verilerini paralel çekiyoruz (Promise.all ile ikisi aynı anda başlar).
+  // Hata durumunda varsayılan bölümler ve sıfır ilerlemeyle devam edilir.
   async function loadData() {
     try {
       setLoading(true);
@@ -72,19 +78,21 @@ export default function LevelSelectScreen({ navigation, route }: Props) {
   }
 
   // Seviyenin tamamlanma, aktif veya kilitli olma durumunu bulduğum fonksiyon.
+  // Önce completedLevels'te var mı? Sonra currentLevel mı? Yoksa kilitli.
   function getLevelStatus(levelId: number): 'completed' | 'current' | 'locked' {
-    if (!progress) return levelId === 1 ? 'current' : 'locked';
+    if (!progress) return levelId === 1 ? 'current' : 'locked'; // Veri gelmemişse 1.bölüm aktif
     if (progress.completedLevels.includes(levelId)) return 'completed';
     if (levelId === progress.currentLevel) return 'current';
-    if (levelId <= progress.currentLevel) return 'completed';
+    if (levelId <= progress.currentLevel) return 'completed'; // Geçilmiş ama listede yoksa da tamamlanmış say
     return 'locked';
   }
 
   // Tıklanan bölüme gitmeyi sağlayan fonksiyonu yazdım.
+  // Kilitli bölümlere geçiş yapılmaz; sadece 'current' ve 'completed' açılır.
   function handleLevelPress(levelId: number) {
     const status = getLevelStatus(levelId);
     if (status !== 'locked') {
-      navigation.navigate('Game', { levelId, userId });
+      navigation.navigate('Game', { levelId, userId }); // Game ekranına git
     }
   }
 
